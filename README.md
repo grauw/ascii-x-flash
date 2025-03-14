@@ -33,12 +33,12 @@ Usage:
 
 Options:
 
-	* `/s` Slot number (required). Format: p or p-s.
-	* `/e` Erase flash ROM.
-	* `/p` Program flash ROM from file.
-	* `/v` Verify flash ROM with file.
-	* `/d` Dump flash ROM to file.
-	* `/i` Display flash ROM information.
+  * `/s` Slot number (required). Format: p or p-s.
+  * `/e` Erase flash ROM.
+  * `/p` Program flash ROM from file.
+  * `/v` Verify flash ROM with file.
+  * `/d` Dump flash ROM to file.
+  * `/i` Display flash ROM information.
 
 Example:
 
