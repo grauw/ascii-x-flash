@@ -288,10 +288,7 @@ FlashROM_ProgramBlock: PROC
 	or c
 	ret z
 	ex de,hl
-	push de
-	call FlashROM_GetMapperAddress
-	ld (de),a
-	pop de
+	call FlashROM_SelectMapperAddress
 	ld a,c
 	dec bc
 	inc b
@@ -355,10 +352,7 @@ FullPage:
 ; bc = byte count (<= 1000H)
 FlashROM_ProgramBufferedBlock:
 	ex de,hl
-	push de
-	call FlashROM_GetMapperAddress
-	ld (de),a
-	pop de
+	call FlashROM_SelectMapperAddress
 	ex de,hl
 	call FlashROM_ProgramBuffered
 	jp FlashROM_ResetMapper
@@ -369,10 +363,7 @@ FlashROM_ProgramBufferedBlock:
 ; f <- nz: not equal
 FlashROM_VerifyBlock: PROC
 	ex de,hl
-	push de
-	call FlashROM_GetMapperAddress
-	ld (de),a
-	pop de
+	call FlashROM_SelectMapperAddress
 	ex de,hl
 	call Verify
 	jp FlashROM_ResetMapper
@@ -394,6 +385,16 @@ FlashROM_ResetMapper:
 	ld a,0
 	ld (6000H),a
 	ld (7000H),a
+	ret
+
+; hl = physical address / 1000H
+; hl <- logical address
+; Modifies: af
+FlashROM_SelectMapperAddress:
+	push de
+	call FlashROM_GetMapperAddress
+	ld (de),a
+	pop de
 	ret
 
 ; hl = physical address / 1000H
