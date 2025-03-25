@@ -66,13 +66,6 @@ CFIQuery: MACRO
 	_size: equ $
 	ENDM
 
-; ix = this
-; de <- data
-CFIQuery_GetData_DE:
-	ld e,ixl
-	ld d,ixh
-	ret
-
 ; a = 0: x8, 1: x8/x16
 ; hl = data
 ; ix = this
@@ -89,6 +82,13 @@ X8X16Loop:
 	jp pe,X8X16Loop
 	ret
 	ENDP
+
+; ix = this
+; de <- data
+CFIQuery_GetData_DE:
+	ld e,ixl
+	ld d,ixh
+	ret
 
 ; ix = this
 ; f <- z: QRY signature found

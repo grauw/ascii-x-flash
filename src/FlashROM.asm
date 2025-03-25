@@ -17,14 +17,6 @@ FlashROM: MACRO
 	ENDM
 
 ; ix = this
-; ix <- CFIQuery
-; Modifies: de
-FlashROM_GetCFIQuery:
-	ld de,FlashROM.cfiQuery
-	add ix,de
-	ret
-
-; ix = this
 FlashROM_Construct:
 	call FlashROM_ConstructCFIQuery
 	call FlashROM_ConstructManufacturerDeviceID
@@ -68,6 +60,32 @@ FlashROM_ConstructManufacturerDeviceID: PROC
 	call FlashROM_Reset
 	ret
 	ENDP
+
+; ix = this
+; ix <- CFIQuery
+; Modifies: de
+FlashROM_GetCFIQuery:
+	ld de,FlashROM.cfiQuery
+	add ix,de
+	ret
+
+; ix = this
+; f <- nz: not flash
+FlashROM_IsFlash:
+	push ix
+	call FlashROM_GetCFIQuery
+	call CFIQuery_HasSignature
+	pop ix
+	ret
+
+; ix = this
+; f <- nz: not programmable
+FlashROM_IsProgrammable:
+	call FlashROM_IsFlash
+	ret nz
+	ld a,(ix + FlashROM.continuity)
+	cp 1
+	ret
 
 ; ix = this
 FlashROM_Print:
@@ -202,24 +220,6 @@ FlashROM_PrintContinuity:
 	jp z,System_Print
 	ld hl,FlashROM_messageContinuityBadStatus
 	jp System_Print
-
-; ix = this
-; f <- nz: not flash
-FlashROM_IsFlash:
-	push ix
-	call FlashROM_GetCFIQuery
-	call CFIQuery_HasSignature
-	pop ix
-	ret
-
-; ix = this
-; f <- nz: not programmable
-FlashROM_IsProgrammable:
-	call FlashROM_IsFlash
-	ret nz
-	ld a,(ix + FlashROM.continuity)
-	cp 1
-	ret
 
 ; Modifies: a
 FlashROM_Reset:

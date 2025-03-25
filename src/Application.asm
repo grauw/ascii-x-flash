@@ -13,20 +13,6 @@ Application: MACRO
 	ENDM
 
 ; ix = this
-; ix <- CLI
-Application_GetCLI:
-	ld de,Application.cli
-	add ix,de
-	ret
-
-; ix = this
-; ix <- FlashROM
-Application_GetFlashROM:
-	ld de,Application.flashROM
-	add ix,de
-	ret
-
-; ix = this
 Application_Construct:
 	ld h,40H
 	call Memory_GetSlot
@@ -70,6 +56,20 @@ Application_Destruct:
 	ld h,80H
 	ld a,(ix + Application.slotRestore1)
 	call Memory_SetSlot
+	ret
+
+; ix = this
+; ix <- CLI
+Application_GetCLI:
+	ld de,Application.cli
+	add ix,de
+	ret
+
+; ix = this
+; ix <- FlashROM
+Application_GetFlashROM:
+	ld de,Application.flashROM
+	add ix,de
 	ret
 
 ; ix = this
