@@ -25,14 +25,8 @@ CLI: MACRO
 	ENDM
 
 ; ix = this
-; ix <- this
 CLI_Construct:
 	jr CLI_Parse
-
-; ix = this
-; ix <- this
-CLI_Destruct:
-	ret
 
 ; ix = this
 ; de <- file info block

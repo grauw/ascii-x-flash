@@ -64,20 +64,12 @@ Application_Construct:
 
 ; ix = this
 Application_Destruct:
-	push ix
-	call Application_GetFlashROM
-	call FlashROM_Destruct
-	pop ix
 	ld h,40H
 	ld a,(ix + Application.slotRestore1)
 	call Memory_SetSlot
 	ld h,80H
 	ld a,(ix + Application.slotRestore1)
 	call Memory_SetSlot
-	push ix
-	call Application_GetCLI
-	call CLI_Destruct
-	pop ix
 	ret
 
 ; ix = this

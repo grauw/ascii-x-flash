@@ -70,10 +70,6 @@ FlashROM_ConstructManufacturerDeviceID: PROC
 	ENDP
 
 ; ix = this
-FlashROM_Destruct:
-	ret
-
-; ix = this
 FlashROM_Print:
 	call FlashROM_IsFlash
 	ld hl,FlashROM_messageNotFlash
