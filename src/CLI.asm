@@ -31,6 +31,7 @@ CLI_Construct:
 	call DOS_GetEnvironmentItem
 	call nz,System_ThrowException
 	call CLI_Parse
+	call CLI_Verify
 	ret
 
 ; ix = this
@@ -151,6 +152,30 @@ Loop:
 	ret
 	ENDP
 
+; ix = this
+CLI_Verify: PROC
+	bit 0,(ix + CLI.program)
+	jr nz,Program
+	bit 0,(ix + CLI.verify)
+	jr nz,Verify
+	bit 0,(ix + CLI.dump)
+	jr nz,Dump
+	ret
+Program:
+Verify:
+	ld hl,CLI_dumpProgramVerifyError
+	bit 0,(ix + CLI.dump)
+	call nz,System_ThrowExceptionWithMessage
+	ret
+Dump:
+	ld hl,CLI_dumpProgramVerifyError
+	bit 0,(ix + CLI.program)
+	call nz,System_ThrowExceptionWithMessage
+	bit 0,(ix + CLI.verify)
+	call nz,System_ThrowExceptionWithMessage
+	ret
+	ENDP
+
 ; de = buffer position
 ; ix = this
 ; c <- value
@@ -236,3 +261,6 @@ CLI_parameterError:
 
 CLI_multiplePathsError:
 	db "Can not specify more than one file path.",13,10,0
+
+CLI_dumpProgramVerifyError:
+	db "Can not combine dump with program or verify.",13,10,0
