@@ -1,7 +1,6 @@
 ;
 ;
 ;
-DEBUG: equ 1
 CFIQuery_SHIM: equ 0
 
 	org 100H
