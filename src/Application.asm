@@ -2,12 +2,12 @@
 ; Main application
 ;
 Application: MACRO
-	cli:
-		CLI
 	slotRestore1:
 		db 0
 	slotRestore2:
 		db 0
+	cli:
+		CLI
 	flashROM:
 		FlashROM
 	ENDM

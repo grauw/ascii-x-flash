@@ -2,7 +2,6 @@
 ; Command-line interface parser
 ;
 CLI_BUFFER_SIZE: equ 255
-CLI_MAX_SLOTS: equ 4
 
 CLI: MACRO
 	fileInfoBlockReference:
@@ -21,12 +20,31 @@ CLI: MACRO
 		db 0
 	fileInfoBlock:
 		FileInfoBlock
+	buffer:
+		ds CLI_BUFFER_SIZE
 	_size:
 	ENDM
 
 ; ix = this
 CLI_Construct:
-	jr CLI_Parse
+	call CLI_GetBuffer_DE
+	ld hl,CLI_parametersEnvName
+	ld b,255
+	call DOS_GetEnvironmentItem
+	call nz,System_ThrowException
+	call CLI_Parse
+	ret
+
+; ix = this
+; de <- buffer
+; Modifies: hl
+CLI_GetBuffer_DE:
+	ld e,ixl
+	ld d,ixh
+	ld hl,CLI.buffer
+	add hl,de
+	ex de,hl
+	ret
 
 ; ix = this
 ; de <- file info block
@@ -47,11 +65,7 @@ CLI_GetFileInfoBlock:
 
 ; ix = this
 CLI_Parse: PROC
-	ld de,CLI_buffer
-	ld hl,CLI_parametersEnvName
-	ld b,CLI_BUFFER_SIZE
-	call DOS_GetEnvironmentItem
-	call nz,System_ThrowException
+	call CLI_GetBuffer_DE
 Loop:
 	ld a,(de)
 	and a
@@ -246,6 +260,3 @@ CLI_parameterError:
 
 CLI_multiplePathsError:
 	db "Can not specify more than one file path.",13,10,0
-
-CLI_buffer:
-	ds CLI_BUFFER_SIZE
