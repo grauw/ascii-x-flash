@@ -15,6 +15,8 @@ FlashROM: MACRO
 		db 0,0,0
 	continuity:
 		db 0
+	capacity:
+		dw 0
 	cfiQuery:
 		CFIQuery
 	ENDM
@@ -27,6 +29,12 @@ FlashROM_Construct:
 	call FlashROM_ConstructCFIQuery
 	call FlashROM_ConstructManufacturerDeviceID
 	call FlashROM_CheckContinuity
+	push ix
+	call FlashROM_GetCFIQuery
+	call CFIQuery_GetCapacity
+	pop ix
+	ld (ix + FlashROM.capacity + 0),l
+	ld (ix + FlashROM.capacity + 1),h
 	ret
 
 ; ix = this
@@ -95,6 +103,22 @@ FlashROM_IsProgrammable:
 	ld a,(ix + FlashROM.continuity)
 	cp 1
 	ret
+
+; de = physical address / 1000H
+; ix = this
+; f <- c: out of range
+; Modifies: a
+FlashROM_CheckCapacity: PROC
+	ld a,(ix + FlashROM.capacity + 1)
+	sub 1
+	jr c,CheckLSB
+	sub d
+	ret
+CheckLSB:
+	ld a,(ix + FlashROM.capacity + 0)
+	sbc a,e
+	ret
+	ENDP
 
 ; ix = this
 FlashROM_SelectSlot:
@@ -463,6 +487,14 @@ Loop:
 	jp pe,Loop
 	ret
 	ENDP
+
+; hl = source / 1000H
+; de = destination
+; bc = byte count (<= 1000H)
+FlashROM_ReadBlock:
+	call FlashROM_SelectMapperAddress
+	call System_FastLDIR
+	jp FlashROM_ResetMapper
 
 ; Modifies: a
 FlashROM_ResetMapper:

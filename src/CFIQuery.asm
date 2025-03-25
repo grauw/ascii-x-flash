@@ -105,6 +105,27 @@ CFIQuery_HasSignature:
 	ret
 
 ; ix = this
+; hl <- capacity / 1000H (0: n/a, 4000H: >= 64 MB)
+CFIQuery_GetCapacity: PROC
+	call CFIQuery_HasSignature
+	ld hl,0
+	ret nz
+	ld a,(ix + CFIQuery.deviceSize)
+	sub 12
+	ret c
+	inc hl
+	ret z
+	cp 14
+	jr c,Loop
+	ld a,14
+Loop:
+	add hl,hl
+	dec a
+	jr nz,Loop
+	ret
+	ENDP
+
+; ix = this
 CFIQuery_PrintArray: PROC
 	ld a,"C"
 	call System_PrintChar

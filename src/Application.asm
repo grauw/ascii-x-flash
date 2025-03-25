@@ -207,7 +207,44 @@ Application_Dump: PROC
 	ret z
 	ld hl,Application_messageDumping
 	call System_Print
-	call System_ThrowException
+	call Application_CreateFile
+	ld a,2
+	call DOS_OpenFileHandle
+	call DOS_TerminateIfError
+	push ix
+	call Application_GetFlashROM
+	ld de,0000H
+	call Loop
+	pop ix
+	call DOS_CloseFileHandle
+	call DOS_TerminateIfError
+	call System_PrintCrLf
+	ret
+; b = file handle
+; de = physical address / 1000H
+; ix = flash ROM
+Loop:
+	push bc
+	push de
+	push bc
+	ex de,hl
+	ld bc,FlashROM_BLOCK_SIZE
+	ld de,Application_buffer
+	di
+	call FlashROM_ReadBlock
+	ei
+	pop bc
+	ld de,Application_buffer
+	ld hl,FlashROM_BLOCK_SIZE
+	call DOS_WriteToFileHandle
+	pop de
+	pop bc
+	call DOS_TerminateIfError
+	inc de
+	call Application_PrintProgress
+	call FlashROM_CheckCapacity
+	jr nc,Loop
+	ret
 	ENDP
 
 ; ix = this
@@ -297,6 +334,24 @@ Application_FindFile:
 	add ix,bc
 	ld b,0
 	call DOS_FindFirstEntry
+	call DOS_TerminateIfError
+	ld e,ixl
+	ld d,ixh
+	pop ix
+	ret
+
+; ix = this
+; de <- file info block
+Application_CreateFile:
+	push ix
+	call Application_GetCLI
+	call CLI_GetPath_DE
+	pop ix
+	push ix
+	ld bc,Application.fileInfoBlock
+	add ix,bc
+	ld b,0
+	call DOS_FindNewEntry
 	call DOS_TerminateIfError
 	ld e,ixl
 	ld d,ixh
