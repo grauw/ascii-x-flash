@@ -177,7 +177,7 @@ Check01:
 	ENDP
 
 ; ix = this
-FlashROM_CheckContinuity: PROC
+FlashROM_CheckContinuity:
 	ld (ix + FlashROM.continuity),1
 	call FlashROM_SupportsContinuity
 	ret nz
@@ -189,7 +189,7 @@ FlashROM_CheckContinuity: PROC
 	call FlashROM_ClearStatus
 	call FlashROM_ReadStatus
 	bit 0,a
-	jr nz,Bad
+	jp nz,FlashROM_ResetMapper  ; bad
 	ld (ix + FlashROM.continuity),0
 	ld a,0FFH
 	ld (4000H + (5554ABH & 3FFFH)),a
@@ -197,15 +197,9 @@ FlashROM_CheckContinuity: PROC
 	ld (8000H + (2AAB54H & 3FFFH)),a
 	call FlashROM_ReadStatus
 	bit 0,a
-	jr z,Bad
+	jp z,FlashROM_ResetMapper  ; bad
 	ld (ix + FlashROM.continuity),1
-Bad:
-	ld a,0
-	ld (6000H),a
-	ld a,0
-	ld (7000H),a
-	ret
-	ENDP
+	jp FlashROM_ResetMapper
 
 ; ix = this
 FlashROM_PrintContinuity:
@@ -311,11 +305,7 @@ Loop:
 	djnz Loop
 	dec c
 	jr nz,Loop
-	ld a,0
-	ld (6000H),a
-	ld a,0
-	ld (7000H),a
-	ret
+	jp FlashROM_ResetMapper
 	ENDP
 
 ; hl = source
@@ -363,7 +353,7 @@ FullPage:
 ; hl = source
 ; de = destination / 1000H
 ; bc = byte count (<= 1000H)
-FlashROM_ProgramBufferedBlock: PROC
+FlashROM_ProgramBufferedBlock:
 	ex de,hl
 	push de
 	call FlashROM_GetMapperAddress
@@ -371,12 +361,7 @@ FlashROM_ProgramBufferedBlock: PROC
 	pop de
 	ex de,hl
 	call FlashROM_ProgramBuffered
-	ld a,0
-	ld (6000H),a
-	ld a,0
-	ld (7000H),a
-	ret
-	ENDP
+	jp FlashROM_ResetMapper
 
 ; hl = source
 ; de = destination / 1000H
@@ -390,11 +375,7 @@ FlashROM_VerifyBlock: PROC
 	pop de
 	ex de,hl
 	call Verify
-	ld a,0
-	ld (6000H),a
-	ld a,0
-	ld (7000H),a
-	ret
+	jp FlashROM_ResetMapper
 ; hl = source
 ; de = destination
 ; bc = byte count
@@ -407,6 +388,13 @@ Verify:
 	jp pe,Verify
 	ret
 	ENDP
+
+; Modifies: a
+FlashROM_ResetMapper:
+	ld a,0
+	ld (6000H),a
+	ld (7000H),a
+	ret
 
 ; hl = physical address / 1000H
 ; hl <- logical address
