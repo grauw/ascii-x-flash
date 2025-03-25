@@ -1,8 +1,6 @@
 ;
 ;
 ;
-CFIQuery_SHIM: equ 0
-
 	org 100H
 
 TPA_PAGE0:

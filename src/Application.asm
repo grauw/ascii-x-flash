@@ -37,14 +37,6 @@ Application_Construct:
 	push ix
 	call Application_GetFlashROM
 	call FlashROM_Construct
-	IF CFIQuery_SHIM
-	push ix
-	call FlashROM_GetCFIQuery
-	ld a,0
-	ld hl,CFIQuery_shim
-	call CFIQuery_Construct
-	pop ix
-	ENDIF
 	pop ix
 	ret
 
