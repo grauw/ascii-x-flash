@@ -8,6 +8,8 @@ Application: MACRO
 		db 0
 	cli:
 		CLI
+	fileInfoBlock:
+		FileInfoBlock
 	flashROM:
 		FlashROM
 	ENDM
@@ -121,12 +123,7 @@ Application_Program: PROC
 	ld hl,Application_messageProgramming
 	call System_Print
 	call Application_CheckProgrammable
-	push ix
-	call Application_GetCLI
-	call CLI_GetFileInfoBlock_DE
-	pop ix
-	ld hl,Application_errorNoFile
-	call z,System_ThrowExceptionWithMessage
+	call Application_FindFile
 	ld a,1
 	call DOS_OpenFileHandle
 	call DOS_TerminateIfError
@@ -180,12 +177,7 @@ Application_Verify: PROC
 	ret z
 	ld hl,Application_messageVerifying
 	call System_Print
-	push ix
-	call Application_GetCLI
-	call CLI_GetFileInfoBlock_DE
-	pop ix
-	ld hl,Application_errorNoFile
-	call z,System_ThrowExceptionWithMessage
+	call Application_FindFile
 	ld a,1
 	call DOS_OpenFileHandle
 	call DOS_TerminateIfError
@@ -252,6 +244,26 @@ Application_CheckProgrammable:
 	call FlashROM_IsProgrammable
 	ld hl,Application_errorFlash
 	call nz,System_ThrowExceptionWithMessage
+	pop ix
+	ret
+
+; ix = this
+; de <- file info block
+Application_FindFile:
+	push ix
+	call Application_GetCLI
+	call CLI_GetPath_DE
+	pop ix
+	ld hl,Application_errorNoFile
+	call z,System_ThrowExceptionWithMessage
+	push ix
+	ld bc,Application.fileInfoBlock
+	add ix,bc
+	ld b,0
+	call DOS_FindFirstEntry
+	call DOS_TerminateIfError
+	ld e,ixl
+	ld d,ixh
 	pop ix
 	ret
 

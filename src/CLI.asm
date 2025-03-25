@@ -4,8 +4,6 @@
 CLI_BUFFER_SIZE: equ 255
 
 CLI: MACRO
-	fileInfoBlockReference:
-		dw 0
 	slot:
 		db 0FFH
 	erase:
@@ -18,8 +16,8 @@ CLI: MACRO
 		db 0
 	info:
 		db 0
-	fileInfoBlock:
-		FileInfoBlock
+	path:
+		dw 0
 	buffer:
 		ds CLI_BUFFER_SIZE
 	_size:
@@ -47,20 +45,12 @@ CLI_GetBuffer_DE:
 	ret
 
 ; ix = this
-; de <- file info block
-CLI_GetFileInfoBlock_DE:
-	ld e,(ix + CLI.fileInfoBlockReference)
-	ld d,(ix + CLI.fileInfoBlockReference + 1)
+; de <- path
+CLI_GetPath_DE:
+	ld e,(ix + CLI.path)
+	ld d,(ix + CLI.path + 1)
 	ld a,e
 	or d
-	ret
-
-; ix = this
-; ix <- file info block
-CLI_GetFileInfoBlock:
-	call CLI_GetFileInfoBlock_DE
-	ld ixl,e
-	ld ixh,d
 	ret
 
 ; ix = this
@@ -138,13 +128,15 @@ Next:
 	ENDP
 
 ; de = buffer position
+; de <- buffer position after path
 ; ix = this
 CLI_ParsePath: PROC
-	ld a,(ix + CLI.fileInfoBlockReference)
-	or (ix + CLI.fileInfoBlockReference + 1)
+	ld a,(ix + CLI.path)
+	or (ix + CLI.path + 1)
 	ld hl,CLI_multiplePathsError
 	call nz,System_ThrowExceptionWithMessage
-	push de
+	ld (ix + CLI.path),e
+	ld (ix + CLI.path + 1),d
 Loop:
 	ld a,(de)
 	inc de
@@ -152,26 +144,10 @@ Loop:
 	jr nc,Loop
 	dec de
 	and a
-	jr z,FindFile
+	ret z
 	xor a
 	ld (de),a
 	inc de
-FindFile:
-	pop hl
-	push de
-	ex de,hl
-	push ix
-	ld bc,CLI.fileInfoBlock
-	add ix,bc
-	ld b,0
-	call DOS_FindFirstEntry
-	call DOS_TerminateIfError
-	ld e,ixl
-	ld d,ixh
-	pop ix
-	ld (ix + CLI.fileInfoBlockReference),e
-	ld (ix + CLI.fileInfoBlockReference + 1),d
-	pop de
 	ret
 	ENDP
 
