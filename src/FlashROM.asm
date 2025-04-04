@@ -53,8 +53,11 @@ FlashROM_ConstructCFIQuery: PROC
 
 ; ix = this
 FlashROM_ConstructManufacturerDeviceID: PROC
-	ld a,90H
-	call FlashROM_EnterCommand
+	call FlashROM_LoadCommandAddressExx
+	exx
+	FlashROM_Unlock_M
+	ld (hl),090H
+	exx
 	ld a,(4000H + 00H)
 	ld (ix + FlashROM.manufacturerID),a
 	ld a,(4000H + 02H)
@@ -258,48 +261,38 @@ FlashROM_ReadStatus:
 	ld a,(4000H)
 	ret
 
-; Modifies: a
-FlashROM_EnterCommandMode:
-	ld a,FlashROM_COMMAND_ADDRESS
-	ld (4000H + FlashROM_COMMAND_ADDRESS),a
-	ld a,FlashROM_COMMAND_ADDRESS >> 1
-	ld (4000H + (FlashROM_COMMAND_ADDRESS >> 1)),a
+; hl' <- Command 1st cycle address
+; de' <- Command 2nd cycle address
+FlashROM_LoadCommandAddressExx:
+	exx
+	ld hl,4000H + FlashROM_COMMAND_ADDRESS
+	ld de,4000H + (FlashROM_COMMAND_ADDRESS >> 1)
+	exx
 	ret
 
-; a = command number
-FlashROM_EnterCommand:
-	push af
-	call FlashROM_EnterCommandMode
-	pop af
-	ld (4000H + FlashROM_COMMAND_ADDRESS),a
-	ret
+; hl = Command 1st cycle address
+; de = Command 2nd cycle address
+FlashROM_Unlock_M: MACRO
+	ld (hl),l
+	ex de,hl
+	ld (hl),l
+	ex de,hl
+	ENDM
 
 FlashROM_ChipErase: PROC
-	ld a,80H
-	call FlashROM_EnterCommand
-	ld a,10H
-	call FlashROM_EnterCommand
+	call FlashROM_LoadCommandAddressExx
+	exx
+	FlashROM_Unlock_M
+	ld (hl),080H
+	FlashROM_Unlock_M
+	ld (hl),010H
+	exx
 	ld a,0FFH
 	ld hl,4000H
 Poll:
 	cp (hl)
 	ret z
 	jr Poll
-	ENDP
-
-; a = value
-; hl = address
-; Modifies: f
-FlashROM_Program: PROC
-	push af
-	ld a,0A0H
-	call FlashROM_EnterCommand
-	pop af
-	ld (hl),a
-Loop:
-	cp (hl)
-	ret z
-	jr Loop
 	ENDP
 
 ; hl = source
@@ -319,6 +312,10 @@ FlashROM_ProgramByteBlock: PROC
 	ld a,b
 	or c
 	ret z
+	call FlashROM_LoadCommandAddressExx
+	exx
+	ld c,0A0H
+	exx
 	ex de,hl
 	call FlashROM_SelectMapperAddress
 	ld a,c
@@ -330,9 +327,16 @@ FlashROM_ProgramByteBlock: PROC
 	jp FlashROM_ResetMapper
 Program:
 Loop:
+	exx
+	FlashROM_Unlock_M
+	ld (hl),c
+	exx
 	ld a,(de)
-	call FlashROM_Program
+	ld (hl),a
 	inc de
+Poll:
+	cp (hl)
+	jr nz,Poll
 	inc hl
 	djnz Loop
 	dec c
@@ -344,6 +348,7 @@ Loop:
 ; de = destination / 1000H
 ; bc = byte count (<= 1000H)
 FlashROM_ProgramBufferBlock: PROC
+	call FlashROM_LoadCommandAddressExx
 	ex de,hl
 	call FlashROM_SelectMapperAddress
 	call Program
@@ -353,8 +358,10 @@ Loop:
 	ld a,b
 	or c
 	ret z
-	call FlashROM_EnterCommandMode
-	ld (hl),25H
+	exx
+	FlashROM_Unlock_M
+	exx
+	ld (hl),025H
 	inc b
 	dec b
 	dec bc
@@ -369,12 +376,12 @@ Loop:
 LastByte:
 	ld a,(de)
 	ld (hl),a
-	ld (hl),29H
+	ld (hl),029H
+	inc de
 Poll:
 	cp (hl)
 	jr nz,Poll
 	inc hl
-	inc de
 	jp Loop
 FullPage:
 	ld (hl),255
