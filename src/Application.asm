@@ -124,7 +124,6 @@ Application_Erase:
 	call FlashROM_IsProgrammable
 	ld hl,Application_errorFlash
 	call nz,System_ThrowExceptionWithMessage
-	call Application_GetFlashROM
 	call FlashROM_ChipErase
 	pop ix
 	ret
