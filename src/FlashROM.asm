@@ -1,8 +1,6 @@
 ;
 ; FlashROM
 ;
-; TODO: Perform continuity check
-;
 FlashROM_COMMAND_ADDRESS: equ 0AAAH
 
 FlashROM: MACRO
@@ -209,8 +207,8 @@ FlashROM_PrintContinuity:
 	ld hl,FlashROM_messageContinuityBadStatus
 	jp System_Print
 
-; nz <- not flash
-; Modifies: a
+; ix = this
+; f <- nz: not flash
 FlashROM_IsFlash:
 	push ix
 	call FlashROM_GetCFIQuery
@@ -218,8 +216,8 @@ FlashROM_IsFlash:
 	pop ix
 	ret
 
-; nz <- not programmable
-; Modifies: a
+; ix = this
+; f <- nz: not programmable
 FlashROM_IsProgrammable:
 	call FlashROM_IsFlash
 	ret nz

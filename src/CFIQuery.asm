@@ -75,6 +75,7 @@ CFIQuery_GetData_DE:
 
 ; a = 0: x8, 1: x8/x16
 ; hl = data
+; ix = this
 CFIQuery_Construct: PROC
 	call CFIQuery_GetData_DE
 	ld bc,80H
@@ -89,7 +90,8 @@ X8X16Loop:
 	ret
 	ENDP
 
-; z <- QRY signature found
+; ix = this
+; f <- z: QRY signature found
 ; Modifies: a
 CFIQuery_HasSignature:
 	ld a,(ix + CFIQuery.signature + 0)
@@ -175,6 +177,7 @@ CFIQuery_Print:
 	pop ix
 	ret
 
+; ix = this
 CFIQuery_PrintQuery:
 	call CFIQuery_PrintVccMin
 	call CFIQuery_PrintVccMax
@@ -195,54 +198,63 @@ CFIQuery_PrintQuery:
 	call CFIQuery_PrintEraseBlocks
 	ret
 
+; ix = this
 CFIQuery_PrintVccMin:
 	ld hl,CFIQuery_messageVccMin
 	call System_Print
 	ld a,(ix + CFIQuery.data + CFIQuery.vccMin)
 	jp CFIQuery_PrintVoltage
 
+; ix = this
 CFIQuery_PrintVccMax:
 	ld hl,CFIQuery_messageVccMax
 	call System_Print
 	ld a,(ix + CFIQuery.data + CFIQuery.vccMax)
 	jp CFIQuery_PrintVoltage
 
+; ix = this
 CFIQuery_PrintVppMin:
 	ld hl,CFIQuery_messageVppMin
 	call System_Print
 	ld a,(ix + CFIQuery.data + CFIQuery.vppMin)
 	jp CFIQuery_PrintVoltage
 
+; ix = this
 CFIQuery_PrintVppMax:
 	ld hl,CFIQuery_messageVppMax
 	call System_Print
 	ld a,(ix + CFIQuery.data + CFIQuery.vppMax)
 	jp CFIQuery_PrintVoltage
 
+; ix = this
 CFIQuery_PrintTypicalTimeout:
 	ld hl,CFIQuery_messageTypicalTimeout
 	call System_Print
 	ld a,(ix + CFIQuery.data + CFIQuery.typicalTimeout)
 	jp CFIQuery_PrintMicroSeconds
 
+; ix = this
 CFIQuery_PrintTypicalTimeoutBufferWrite:
 	ld hl,CFIQuery_messageTypicalTimeoutBufferWrite
 	call System_Print
 	ld a,(ix + CFIQuery.data + CFIQuery.typicalTimeoutBufferWrite)
 	jp CFIQuery_PrintMicroSeconds
 
+; ix = this
 CFIQuery_PrintTypicalTimeoutBlockErase:
 	ld hl,CFIQuery_messageTypicalTimeoutBlockErase
 	call System_Print
 	ld a,(ix + CFIQuery.data + CFIQuery.typicalTimeoutBlockErase)
 	jp CFIQuery_PrintMilliSeconds
 
+; ix = this
 CFIQuery_PrintTypicalTimeoutChipErase:
 	ld hl,CFIQuery_messageTypicalTimeoutChipErase
 	call System_Print
 	ld a,(ix + CFIQuery.data + CFIQuery.typicalTimeoutChipErase)
 	jp CFIQuery_PrintMilliSeconds
 
+; ix = this
 CFIQuery_PrintMaxTimeout:
 	ld hl,CFIQuery_messageMaxTimeout
 	call System_Print
@@ -250,6 +262,7 @@ CFIQuery_PrintMaxTimeout:
 	add a,(ix + CFIQuery.data + CFIQuery.maxTimeout)
 	jp CFIQuery_PrintMicroSeconds
 
+; ix = this
 CFIQuery_PrintMaxTimeoutBufferWrite:
 	ld hl,CFIQuery_messageMaxTimeoutBufferWrite
 	call System_Print
@@ -257,6 +270,7 @@ CFIQuery_PrintMaxTimeoutBufferWrite:
 	add a,(ix + CFIQuery.data + CFIQuery.maxTimeoutBufferWrite)
 	jp CFIQuery_PrintMicroSeconds
 
+; ix = this
 CFIQuery_PrintMaxTimeoutBlockErase:
 	ld hl,CFIQuery_messageMaxTimeoutBlockErase
 	call System_Print
@@ -264,6 +278,7 @@ CFIQuery_PrintMaxTimeoutBlockErase:
 	add a,(ix + CFIQuery.data + CFIQuery.maxTimeoutBlockErase)
 	jp CFIQuery_PrintMilliSeconds
 
+; ix = this
 CFIQuery_PrintMaxTimeoutChipErase:
 	ld hl,CFIQuery_messageMaxTimeoutChipErase
 	call System_Print
@@ -271,12 +286,14 @@ CFIQuery_PrintMaxTimeoutChipErase:
 	add a,(ix + CFIQuery.data + CFIQuery.maxTimeoutChipErase)
 	jp CFIQuery_PrintMilliSeconds
 
+; ix = this
 CFIQuery_PrintDeviceSize:
 	ld hl,CFIQuery_messageDeviceSize
 	call System_Print
 	ld a,(ix + CFIQuery.data + CFIQuery.deviceSize)
 	jp CFIQuery_PrintSize
 
+; ix = this
 CFIQuery_PrintDeviceInterface:
 	ld hl,CFIQuery_messageDeviceInterface
 	call System_Print
@@ -301,6 +318,7 @@ CFIQuery_PrintDeviceInterface:
 	call System_PrintHexHL
 	jp System_PrintCrLf
 
+; ix = this
 CFIQuery_PrintMaxBufferWrite:
 	ld hl,CFIQuery_messageMaxBufferWrite
 	call System_Print
@@ -308,6 +326,7 @@ CFIQuery_PrintMaxBufferWrite:
 	; ld d,(ix + CFIQuery.data + 2BH)
 	jp CFIQuery_PrintSize
 
+; ix = this
 CFIQuery_PrintEraseBlockCount:
 	ld hl,CFIQuery_messageEraseBlockCount
 	call System_Print
@@ -315,6 +334,7 @@ CFIQuery_PrintEraseBlockCount:
 	call System_PrintDecA
 	jp System_PrintCrLf
 
+; ix = this
 CFIQuery_PrintEraseBlocks: PROC
 	ld a,0
 Loop:

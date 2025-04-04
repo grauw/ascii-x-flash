@@ -66,6 +66,7 @@ AMDQuery: MACRO
 		db 0
 	ENDM
 
+; ix = this
 AMDQuery_PrintQuery: PROC
 	call AMDQuery_PrintVendorSpecificVersion
 
@@ -107,6 +108,7 @@ AMDQuery_PrintQuery: PROC
 	ret
 	ENDP
 
+; ix = this
 AMDQuery_PrintVendorSpecificVersion:
 	ld hl,AMDQuery_messageVendorSpecificVersion
 	call System_Print
@@ -114,6 +116,7 @@ AMDQuery_PrintVendorSpecificVersion:
 	ld e,(ix + AMDQuery.version + 1)
 	jp AMDQuery_PrintVersionNumber
 
+; ix = this
 AMDQuery_PrintAddressSensitiveUnlock:
 	ld hl,AMDQuery_messageAddressSensitiveUnlock
 	call System_Print
@@ -121,6 +124,7 @@ AMDQuery_PrintAddressSensitiveUnlock:
 	and 03H
 	jp AMDQuery_PrintRequired
 
+; ix = this
 AMDQuery_PrintProcessTechnology:
 	ld hl,AMDQuery_messageProcessTechnology
 	call System_Print
@@ -131,6 +135,7 @@ AMDQuery_PrintProcessTechnology:
 	call System_PrintHex
 	jp System_PrintCrLf
 
+; ix = this
 AMDQuery_PrintEraseSuspend:
 	ld hl,AMDQuery_messageEraseSuspend
 	call System_Print
@@ -147,18 +152,21 @@ AMDQuery_PrintEraseSuspend:
 	ld hl,AMDQuery_messageUnknown
 	jp System_Print
 
+; ix = this
 AMDQuery_PrintSectorProtect:
 	ld hl,AMDQuery_messageSectorProtect
 	call System_Print
 	ld a,(ix + AMDQuery.sectorProtect)
 	jp AMDQuery_PrintSectors
 
+; ix = this
 AMDQuery_PrintSectorTemporaryUnprotect:
 	ld hl,AMDQuery_messageSectorTemporaryUnprotect
 	call System_Print
 	ld a,(ix + AMDQuery.sectorTemporaryUnprotect)
 	jp AMDQuery_PrintSupported
 
+; ix = this
 AMDQuery_PrintSectorProtectScheme:
 	ld hl,AMDQuery_messageSectorProtectScheme
 	call System_Print
@@ -166,18 +174,21 @@ AMDQuery_PrintSectorProtectScheme:
 	call System_PrintHexA
 	jp System_PrintCrLf
 
+; ix = this
 AMDQuery_PrintSimultaneousOperation:
 	ld hl,AMDQuery_messageSimultaneousOperation
 	call System_Print
 	ld a,(ix + AMDQuery.simultaneousOperation)
 	jp AMDQuery_PrintSectors
 
+; ix = this
 AMDQuery_PrintBurstMode:
 	ld hl,AMDQuery_messageBurstMode
 	call System_Print
 	ld a,(ix + AMDQuery.burstMode)
 	jp AMDQuery_PrintSupported
 
+; ix = this
 AMDQuery_PrintPageMode:
 	ld hl,AMDQuery_messagePageMode
 	call System_Print
@@ -187,18 +198,21 @@ AMDQuery_PrintPageMode:
 	inc a
 	jp CFIQuery_PrintSize
 
+; ix = this
 AMDQuery_PrintACCMin:
 	ld hl,AMDQuery_messageACCMin
 	call System_Print
 	ld a,(ix + AMDQuery.accMin)
 	jp CFIQuery_PrintVoltage
 
+; ix = this
 AMDQuery_PrintACCMax:
 	ld hl,AMDQuery_messageACCMax
 	call System_Print
 	ld a,(ix + AMDQuery.accMax)
 	jp CFIQuery_PrintVoltage
 
+; ix = this
 AMDQuery_PrintBootSectorType:
 	ld hl,AMDQuery_messageBootSectorType
 	call System_Print
@@ -206,6 +220,7 @@ AMDQuery_PrintBootSectorType:
 	call System_PrintHexA
 	jp System_PrintCrLf
 
+; ix = this
 AMDQuery_PrintProgramSuspend:
 	ld hl,AMDQuery_messageProgramSuspend
 	call System_Print

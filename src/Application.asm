@@ -1,5 +1,5 @@
 ;
-;
+; Main application
 ;
 Application: MACRO
 	cli:
@@ -80,6 +80,7 @@ Application_Destruct:
 	pop ix
 	ret
 
+; ix = this
 Application_Run:
 	call Application_Test
 	call Application_PrintInfo
@@ -89,10 +90,12 @@ Application_Run:
 	call Application_Dump
 	ret
 
+; ix = this
 Application_Test:
 	call FlashROM_GetMapperAddress_Test
 	ret
 
+; ix = this
 Application_PrintInfo: PROC
 	ld hl,Application_messageQuery
 	call System_Print
@@ -114,6 +117,7 @@ Verbose:
 	ret
 	ENDP
 
+; ix = this
 Application_Erase:
 	bit 0,(ix + Application.cli.erase)
 	ret z
@@ -128,6 +132,7 @@ Application_Erase:
 	pop ix
 	ret
 
+; ix = this
 Application_Program: PROC
 	bit 0,(ix + Application.cli.program)
 	ret z
@@ -157,6 +162,9 @@ Application_Program: PROC
 	call DOS_TerminateIfError
 	call System_PrintCrLf
 	ret
+; b = file handle
+; de = physical address / 1000H
+; ix = flash ROM
 Loop:
 	push bc
 	push de
@@ -189,6 +197,7 @@ Program:
 	jp FlashROM_ProgramBlock
 	ENDP
 
+; ix = this
 Application_Verify: PROC
 	bit 0,(ix + Application.cli.verify)
 	ret z
@@ -217,6 +226,9 @@ Application_Verify: PROC
 	jp z,System_Print
 	ld hl,Application_messageVerifyFail
 	jp System_Print
+; b = file handle
+; de = physical address / 1000H
+; ix = flash ROM
 Loop:
 	push bc
 	push de
@@ -247,6 +259,7 @@ Loop:
 	jr Loop
 	ENDP
 
+; ix = this
 Application_Dump: PROC
 	bit 0,(ix + Application.cli.dump)
 	ret z
@@ -255,6 +268,7 @@ Application_Dump: PROC
 	call System_ThrowException
 	ENDP
 
+; ix = this
 Application_PrintSlot:
 	ld a,(ix + Application.cli.slot)
 	and 3
