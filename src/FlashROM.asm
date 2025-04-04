@@ -102,8 +102,10 @@ FlashROM_SelectSlot:
 	ld a,(ix + FlashROM.slot.id)
 	jp Memory_SetSlot
 
+; a = nz: verbose
 ; ix = this
-FlashROM_Print:
+FlashROM_Print: PROC
+	push af
 	call FlashROM_PrintQueryingSlot
 	call FlashROM_IsFlash
 	ld hl,FlashROM_messageNotFlash
@@ -111,33 +113,29 @@ FlashROM_Print:
 	call FlashROM_PrintManufacturerID
 	call FlashROM_PrintDeviceID
 	call System_PrintCrLf
+	pop af
 	push ix
 	call FlashROM_GetCFIQuery
-	call CFIQuery_PrintDeviceSize
-	call CFIQuery_PrintMaxBufferWrite
+	call PrintCFI
 	pop ix
 	call System_PrintCrLf
+	call FlashROM_SupportsContinuity
+	ret nz
 	call FlashROM_PrintContinuity
-	ret
-
-; ix = this
-FlashROM_PrintVerbose:
-	call FlashROM_PrintQueryingSlot
-	call FlashROM_IsFlash
-	ld hl,FlashROM_messageNotFlash
-	call nz,System_Print
-	call FlashROM_PrintManufacturerID
-	call FlashROM_PrintDeviceID
 	call System_PrintCrLf
-	push ix
-	call FlashROM_GetCFIQuery
+	ret
+PrintCFI:
+	and a
+	jr nz,Verbose
+	call CFIQuery_PrintDeviceSize
+	call CFIQuery_PrintMaxBufferWrite
+	ret
+Verbose:
 	call CFIQuery_Print
 	call System_PrintCrLf
 	call CFIQuery_PrintArray
-	pop ix
-	call System_PrintCrLf
-	call FlashROM_PrintContinuity
 	ret
+	ENDP
 
 ; ix = this
 FlashROM_PrintQueryingSlot:
@@ -229,8 +227,6 @@ FlashROM_CheckContinuity:
 
 ; ix = this
 FlashROM_PrintContinuity:
-	call FlashROM_SupportsContinuity
-	ret nz
 	ld a,(ix + FlashROM.continuity)
 	cp 1
 	ld hl,FlashROM_messageContinuityOk

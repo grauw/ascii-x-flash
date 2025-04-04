@@ -73,21 +73,13 @@ Application_Test:
 	ret
 
 ; ix = this
-Application_PrintInfo: PROC
-	bit 0,(ix + Application.cli.info)
-	jr nz,Verbose
+Application_PrintInfo:
+	ld a,(ix + Application.cli.info)
 	push ix
 	call Application_GetFlashROM
 	call FlashROM_Print
 	pop ix
 	ret
-Verbose:
-	push ix
-	call Application_GetFlashROM
-	call FlashROM_PrintVerbose
-	pop ix
-	ret
-	ENDP
 
 ; ix = this
 Application_Erase:
