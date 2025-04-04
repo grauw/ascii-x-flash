@@ -26,7 +26,7 @@ CFIQuery: MACRO
 		db 0
 	typicalTimeoutBufferWrite:
 		db 0
-	typicalTimeoutBlockErase:
+	typicalTimeoutSectorErase:
 		db 0
 	typicalTimeoutChipErase:
 		db 0
@@ -34,7 +34,7 @@ CFIQuery: MACRO
 		db 0
 	maxTimeoutBufferWrite:
 		db 0
-	maxTimeoutBlockErase:
+	maxTimeoutSectorErase:
 		db 0
 	maxTimeoutChipErase:
 		db 0
@@ -44,23 +44,23 @@ CFIQuery: MACRO
 		dw 0
 	maxBufferWrite:
 		dw 0
-	eraseBlockCount:
+	regionCount:
 		db 0
-	eraseBlock1SectorCount:
+	region1SectorCount:
 		dw 0
-	eraseBlock1SectorSize:
+	region1SectorSize:
 		dw 0
-	eraseBlock2SectorCount:
+	region2SectorCount:
 		dw 0
-	eraseBlock2SectorSize:
+	region2SectorSize:
 		dw 0
-	eraseBlock3SectorCount:
+	region3SectorCount:
 		dw 0
-	eraseBlock3SectorSize:
+	region3SectorSize:
 		dw 0
-	eraseBlock4SectorCount:
+	region4SectorCount:
 		dw 0
-	eraseBlock4SectorSize:
+	region4SectorSize:
 		dw 0
 		ds 43H
 	_size: equ $
@@ -185,17 +185,17 @@ CFIQuery_PrintQuery:
 	call CFIQuery_PrintVppMax
 	call CFIQuery_PrintTypicalTimeout
 	call CFIQuery_PrintTypicalTimeoutBufferWrite
-	call CFIQuery_PrintTypicalTimeoutBlockErase
+	call CFIQuery_PrintTypicalTimeoutSectorErase
 	call CFIQuery_PrintTypicalTimeoutChipErase
 	call CFIQuery_PrintMaxTimeout
 	call CFIQuery_PrintMaxTimeoutBufferWrite
-	call CFIQuery_PrintMaxTimeoutBlockErase
+	call CFIQuery_PrintMaxTimeoutSectorErase
 	call CFIQuery_PrintMaxTimeoutChipErase
 	call CFIQuery_PrintDeviceSize
 	call CFIQuery_PrintDeviceInterface
 	call CFIQuery_PrintMaxBufferWrite
-	call CFIQuery_PrintEraseBlockCount
-	call CFIQuery_PrintEraseBlocks
+	call CFIQuery_PrintRegionCount
+	call CFIQuery_PrintRegions
 	ret
 
 ; ix = this
@@ -241,10 +241,10 @@ CFIQuery_PrintTypicalTimeoutBufferWrite:
 	jp CFIQuery_PrintMicroSeconds
 
 ; ix = this
-CFIQuery_PrintTypicalTimeoutBlockErase:
-	ld hl,CFIQuery_messageTypicalTimeoutBlockErase
+CFIQuery_PrintTypicalTimeoutSectorErase:
+	ld hl,CFIQuery_messageTypicalTimeoutSectorErase
 	call System_Print
-	ld a,(ix + CFIQuery.data + CFIQuery.typicalTimeoutBlockErase)
+	ld a,(ix + CFIQuery.data + CFIQuery.typicalTimeoutSectorErase)
 	jp CFIQuery_PrintMilliSeconds
 
 ; ix = this
@@ -271,11 +271,11 @@ CFIQuery_PrintMaxTimeoutBufferWrite:
 	jp CFIQuery_PrintMicroSeconds
 
 ; ix = this
-CFIQuery_PrintMaxTimeoutBlockErase:
-	ld hl,CFIQuery_messageMaxTimeoutBlockErase
+CFIQuery_PrintMaxTimeoutSectorErase:
+	ld hl,CFIQuery_messageMaxTimeoutSectorErase
 	call System_Print
-	ld a,(ix + CFIQuery.data + CFIQuery.typicalTimeoutBlockErase)
-	add a,(ix + CFIQuery.data + CFIQuery.maxTimeoutBlockErase)
+	ld a,(ix + CFIQuery.data + CFIQuery.typicalTimeoutSectorErase)
+	add a,(ix + CFIQuery.data + CFIQuery.maxTimeoutSectorErase)
 	jp CFIQuery_PrintMilliSeconds
 
 ; ix = this
@@ -327,18 +327,18 @@ CFIQuery_PrintMaxBufferWrite:
 	jp CFIQuery_PrintSize
 
 ; ix = this
-CFIQuery_PrintEraseBlockCount:
-	ld hl,CFIQuery_messageEraseBlockCount
+CFIQuery_PrintRegionCount:
+	ld hl,CFIQuery_messageRegionCount
 	call System_Print
-	ld a,(ix + CFIQuery.data + CFIQuery.eraseBlockCount)
+	ld a,(ix + CFIQuery.data + CFIQuery.regionCount)
 	call System_PrintDecA
 	jp System_PrintCrLf
 
 ; ix = this
-CFIQuery_PrintEraseBlocks: PROC
+CFIQuery_PrintRegions: PROC
 	ld a,0
 Loop:
-	cp (ix + CFIQuery.data + CFIQuery.eraseBlockCount)
+	cp (ix + CFIQuery.data + CFIQuery.regionCount)
 	ret z
 	cp 4
 	ret z
@@ -349,24 +349,24 @@ Loop:
 	add ix,de
 	add ix,de
 	add ix,de
-	ld hl,CFIQuery_messageEraseBlock
+	ld hl,CFIQuery_messageRegion
 	call System_Print
 	call System_PrintDecA
-	ld hl,CFIQuery_messageEraseBlockSectorCount
+	ld hl,CFIQuery_messageRegionSectorCount
 	call System_Print
-	ld l,(ix + CFIQuery.data + CFIQuery.eraseBlock1SectorCount + 0)
-	ld h,(ix + CFIQuery.data + CFIQuery.eraseBlock1SectorCount + 1)
+	ld l,(ix + CFIQuery.data + CFIQuery.region1SectorCount + 0)
+	ld h,(ix + CFIQuery.data + CFIQuery.region1SectorCount + 1)
 	inc hl
 	call System_PrintDecHL
 	call System_PrintCrLf
-	ld hl,CFIQuery_messageEraseBlock
+	ld hl,CFIQuery_messageRegion
 	call System_Print
 	call System_PrintDecA
-	ld hl,CFIQuery_messageEraseBlockSectorSize
+	ld hl,CFIQuery_messageRegionSectorSize
 	call System_Print
 	ld l,0
-	ld h,(ix + CFIQuery.data + CFIQuery.eraseBlock1SectorSize + 0)
-	ld e,(ix + CFIQuery.data + CFIQuery.eraseBlock1SectorSize + 1)
+	ld h,(ix + CFIQuery.data + CFIQuery.region1SectorSize + 0)
+	ld e,(ix + CFIQuery.data + CFIQuery.region1SectorSize + 1)
 	ld d,0
 	call System_PrintDecDEHL
 	ld hl,CFIQuery_messageBytes
@@ -489,16 +489,16 @@ CFIQuery_messageTypicalTimeout:
 	db "- Typical timeout: ",0
 CFIQuery_messageTypicalTimeoutBufferWrite:
 	db "- Typical timeout (buffer write): ",0
-CFIQuery_messageTypicalTimeoutBlockErase:
-	db "- Typical timeout (block erase): ",0
+CFIQuery_messageTypicalTimeoutSectorErase:
+	db "- Typical timeout (sector erase): ",0
 CFIQuery_messageTypicalTimeoutChipErase:
 	db "- Typical timeout (chip erase): ",0
 CFIQuery_messageMaxTimeout:
 	db "- Max timeout: ",0
 CFIQuery_messageMaxTimeoutBufferWrite:
 	db "- Max timeout (buffer write): ",0
-CFIQuery_messageMaxTimeoutBlockErase:
-	db "- Max timeout (block erase): ",0
+CFIQuery_messageMaxTimeoutSectorErase:
+	db "- Max timeout (sector erase): ",0
 CFIQuery_messageMaxTimeoutChipErase:
 	db "- Max timeout (chip erase): ",0
 CFIQuery_messageDeviceSize:
@@ -513,13 +513,13 @@ CFIQuery_messageDeviceInterfaceX8X16:
 	db "x8/x16",13,10,0
 CFIQuery_messageMaxBufferWrite:
 	db "- Max buffer write: ",0
-CFIQuery_messageEraseBlockCount:
-	db "- Erase block count: ",0
-CFIQuery_messageEraseBlock:
-	db "- Erase block ",0
-CFIQuery_messageEraseBlockSectorCount:
+CFIQuery_messageRegionCount:
+	db "- Region count: ",0
+CFIQuery_messageRegion:
+	db "- Region ",0
+CFIQuery_messageRegionSectorCount:
 	db " sector count: ",0
-CFIQuery_messageEraseBlockSectorSize:
+CFIQuery_messageRegionSectorSize:
 	db " sector size: ",0
 CFIQuery_messageSupported:
 	db "Supported",13,10,0
