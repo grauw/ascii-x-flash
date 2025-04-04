@@ -6,6 +6,8 @@ CLI_BUFFER_SIZE: equ 255
 CLI: MACRO
 	slot:
 		Slot
+	usage:
+		db -1
 	erase:
 		db 0
 	program:
@@ -48,10 +50,8 @@ CLI_GetBuffer_DE:
 ; ix = this
 ; de <- path
 CLI_GetPath_DE:
-	ld e,(ix + CLI.path)
+	ld e,(ix + CLI.path + 0)
 	ld d,(ix + CLI.path + 1)
-	ld a,e
-	or d
 	ret
 
 ; ix = this
@@ -68,9 +68,11 @@ Loop:
 	inc de
 	jr Loop
 Option:
+	ld (ix + CLI.usage),0
 	call CLI_ParseOption
 	jr Loop
 Path:
+	ld (ix + CLI.usage),0
 	call CLI_ParsePath
 	jr Loop
 	ENDP
@@ -93,7 +95,7 @@ CLI_ParseOption: PROC
 	jr z,OptionDump
 	cp "I"
 	jr z,OptionInfo
-	ld hl,CLI_unknownOptionError
+	ld hl,CLI_errorUnknownOption
 	call System_ThrowExceptionWithMessage
 OptionSlot:
 	inc de
@@ -124,7 +126,7 @@ Next:
 	ld a,(de)
 	cp " " + 1
 	ret c
-	ld hl,CLI_unknownOptionError
+	ld hl,CLI_errorUnknownOption
 	call System_ThrowExceptionWithMessage
 	ENDP
 
@@ -134,7 +136,7 @@ Next:
 CLI_ParsePath: PROC
 	ld a,(ix + CLI.path)
 	or (ix + CLI.path + 1)
-	ld hl,CLI_multiplePathsError
+	ld hl,CLI_errorMultiplePaths
 	call nz,System_ThrowExceptionWithMessage
 	ld (ix + CLI.path),e
 	ld (ix + CLI.path + 1),d
@@ -154,6 +156,13 @@ Loop:
 
 ; ix = this
 CLI_Verify: PROC
+	bit 0,(ix + CLI.usage)
+	ld hl,CLI_messageUsage
+	call nz,System_ThrowExceptionWithMessage
+	ld a,(ix + CLI.slot.id)
+	cp Slot_NONE
+	ld hl,CLI_errorNoSlot
+	call z,System_ThrowExceptionWithMessage
 	bit 0,(ix + CLI.program)
 	jr nz,Program
 	bit 0,(ix + CLI.verify)
@@ -163,15 +172,24 @@ CLI_Verify: PROC
 	ret
 Program:
 Verify:
-	ld hl,CLI_dumpProgramVerifyError
+	ld a,(ix + CLI.path + 0)
+	or (ix + CLI.path + 1)
+	ld hl,CLI_errorNoFile
+	call z,System_ThrowExceptionWithMessage
 	bit 0,(ix + CLI.dump)
+	ld hl,CLI_errorDumpProgramVerify
 	call nz,System_ThrowExceptionWithMessage
 	ret
 Dump:
-	ld hl,CLI_dumpProgramVerifyError
+	ld a,(ix + CLI.path + 0)
+	or (ix + CLI.path + 1)
+	ld hl,CLI_errorNoFile
+	call z,System_ThrowExceptionWithMessage
 	bit 0,(ix + CLI.program)
+	ld hl,CLI_errorDumpProgramVerify
 	call nz,System_ThrowExceptionWithMessage
 	bit 0,(ix + CLI.verify)
+	ld hl,CLI_errorDumpProgramVerify
 	call nz,System_ThrowExceptionWithMessage
 	ret
 	ENDP
@@ -182,7 +200,7 @@ Dump:
 ; de <- buffer position after number
 CLI_ParseNumber: PROC
 	ld c,0
-	ld hl,CLI_unknownOptionError
+	ld hl,CLI_errorUnknownOption
 Loop:
 	ld a,(de)
 	cp " " + 1
@@ -219,7 +237,7 @@ Multiply10AndAdd:
 ; de <- buffer position after slot ID
 CLI_ParseSlot:
 	ld c,0
-	ld hl,CLI_parameterError
+	ld hl,CLI_errorParameter
 	ld a,(de)
 	sub "0"
 	call c,System_ThrowExceptionWithMessage
@@ -252,15 +270,25 @@ CLI_ParseSlot:
 ;
 CLI_parametersEnvName:
 	db "PARAMETERS",0
-
-CLI_unknownOptionError:
+CLI_errorUnknownOption:
 	db "Unknown command line option.",13,10,0
-
-CLI_parameterError:
+CLI_errorParameter:
 	db "Missing or invalid command line option parameter.",13,10,0
-
-CLI_multiplePathsError:
+CLI_errorMultiplePaths:
 	db "Can not specify more than one file path.",13,10,0
-
-CLI_dumpProgramVerifyError:
+CLI_errorDumpProgramVerify:
 	db "Can not combine dump with program or verify.",13,10,0
+CLI_errorNoSlot:
+	db "No slot specified.",13,10,0
+CLI_errorNoFile:
+	db "No file specified.",13,10,0
+CLI_messageUsage:
+	db "Usage: asciixf [options] [<file.rom>]",13,10
+	db 13,10
+	db "Options:",13,10
+	db "  /s  Slot number (required). Format: p or p-s.",13,10
+	db "  /e  Erase flash ROM.",13,10
+	db "  /p  Program flash ROM from file.",13,10
+	db "  /v  Verify flash ROM with file.",13,10
+	db "  /d  Dump flash ROM to file.",13,10
+	db "  /i  Display flash ROM information.",13,10,0

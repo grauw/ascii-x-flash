@@ -26,10 +26,6 @@ Application_Construct:
 	call Application_GetCLI
 	call CLI_Construct
 	pop ix
-	ld a,(ix + Application.cli.slot.id)
-	cp Slot_NONE
-	ld hl,Application_messageUsage
-	call z,System_ThrowExceptionWithMessage
 	ld h,40H
 	ld a,(ix + Application.cli.slot.id)
 	call Memory_SetSlot
@@ -265,8 +261,6 @@ Application_FindFile:
 	call Application_GetCLI
 	call CLI_GetPath_DE
 	pop ix
-	ld hl,Application_errorNoFile
-	call z,System_ThrowExceptionWithMessage
 	push ix
 	ld bc,Application.fileInfoBlock
 	add ix,bc
@@ -279,10 +273,6 @@ Application_FindFile:
 	ret
 
 ;
-Application_errorNoSlot:
-	db "No slot specified.",13,10,0
-Application_errorNoFile:
-	db "No file specified.",13,10,0
 Application_errorFlash:
 	db "FlashROM error.",13,10,0
 Application_messageQuery:
@@ -301,17 +291,6 @@ Application_messageVerifySuccess:
 	db "Verification successful.",13,10,0
 Application_messageVerifyFail:
 	db "Verification failed.",13,10,0
-
-Application_messageUsage:
-	db "Usage: asciixf [options] [<file.rom>]",13,10
-	db 13,10
-	db "Options:",13,10
-	db "  /s  Slot number (required). Format: p or p-s.",13,10
-	db "  /e  Erase flash ROM.",13,10
-	db "  /p  Program flash ROM from file.",13,10
-	db "  /v  Verify flash ROM with file.",13,10
-	db "  /d  Dump flash ROM to file.",13,10
-	db "  /i  Display flash ROM information.",13,10,0
 
 Application_buffer:
 	ds FlashROM_BLOCK_SIZE
