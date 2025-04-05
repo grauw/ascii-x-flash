@@ -452,6 +452,8 @@ FlashROM_GetMapperAddress:
 	ld l,0
 	ld a,e
 	ld e,0
+	res 7,d
+	set 6,d
 	ret
 
 FlashROM_GetMapperAddress_Assert_M: MACRO ?physicalAddress, ?logicalAddress, ?bankAddress, ?bankData
@@ -469,34 +471,34 @@ FlashROM_GetMapperAddress_Assert_M: MACRO ?physicalAddress, ?logicalAddress, ?ba
 	ENDM
 
 FlashROM_GetMapperAddress_Test:
-	FlashROM_GetMapperAddress_Assert_M 0000000H, 08000H, 0B000H, 000H
+	FlashROM_GetMapperAddress_Assert_M 0000000H, 08000H, 07000H, 000H
 	FlashROM_GetMapperAddress_Assert_M 0001000H, 05000H, 06000H, 000H
-	FlashROM_GetMapperAddress_Assert_M 0002000H, 0A000H, 0B000H, 000H
+	FlashROM_GetMapperAddress_Assert_M 0002000H, 0A000H, 07000H, 000H
 	FlashROM_GetMapperAddress_Assert_M 0003000H, 07000H, 06000H, 000H
 
-	FlashROM_GetMapperAddress_Assert_M 0004000H, 08000H, 0B000H, 001H
+	FlashROM_GetMapperAddress_Assert_M 0004000H, 08000H, 07000H, 001H
 	FlashROM_GetMapperAddress_Assert_M 0005000H, 05000H, 06000H, 001H
-	FlashROM_GetMapperAddress_Assert_M 0006000H, 0A000H, 0B000H, 001H
+	FlashROM_GetMapperAddress_Assert_M 0006000H, 0A000H, 07000H, 001H
 	FlashROM_GetMapperAddress_Assert_M 0007000H, 07000H, 06000H, 001H
 
-	FlashROM_GetMapperAddress_Assert_M 03FC000H, 08000H, 0B000H, 0FFH
+	FlashROM_GetMapperAddress_Assert_M 03FC000H, 08000H, 07000H, 0FFH
 	FlashROM_GetMapperAddress_Assert_M 03FD000H, 05000H, 06000H, 0FFH
-	FlashROM_GetMapperAddress_Assert_M 03FE000H, 0A000H, 0B000H, 0FFH
+	FlashROM_GetMapperAddress_Assert_M 03FE000H, 0A000H, 07000H, 0FFH
 	FlashROM_GetMapperAddress_Assert_M 03FF000H, 07000H, 06000H, 0FFH
 
-	FlashROM_GetMapperAddress_Assert_M 0400000H, 08000H, 0B100H, 000H
+	FlashROM_GetMapperAddress_Assert_M 0400000H, 08000H, 07100H, 000H
 	FlashROM_GetMapperAddress_Assert_M 0401000H, 05000H, 06100H, 000H
-	FlashROM_GetMapperAddress_Assert_M 0402000H, 0A000H, 0B100H, 000H
+	FlashROM_GetMapperAddress_Assert_M 0402000H, 0A000H, 07100H, 000H
 	FlashROM_GetMapperAddress_Assert_M 0403000H, 07000H, 06100H, 000H
 
-	FlashROM_GetMapperAddress_Assert_M 3FFC000H, 08000H, 0BF00H, 0FFH
+	FlashROM_GetMapperAddress_Assert_M 3FFC000H, 08000H, 07F00H, 0FFH
 	FlashROM_GetMapperAddress_Assert_M 3FFD000H, 05000H, 06F00H, 0FFH
-	FlashROM_GetMapperAddress_Assert_M 3FFE000H, 0A000H, 0BF00H, 0FFH
+	FlashROM_GetMapperAddress_Assert_M 3FFE000H, 0A000H, 07F00H, 0FFH
 	FlashROM_GetMapperAddress_Assert_M 3FFF000H, 07000H, 06F00H, 0FFH
 
-	; FlashROM_GetMapperAddress_Assert_M 4000000H, 08000H, 0B000H, 000H
+	; FlashROM_GetMapperAddress_Assert_M 4000000H, 08000H, 07000H, 000H
 	; FlashROM_GetMapperAddress_Assert_M 4001000H, 05000H, 06000H, 000H
-	; FlashROM_GetMapperAddress_Assert_M 4002000H, 0A000H, 0B000H, 000H
+	; FlashROM_GetMapperAddress_Assert_M 4002000H, 0A000H, 07000H, 000H
 	; FlashROM_GetMapperAddress_Assert_M 4003000H, 07000H, 06000H, 000H
 	ret
 
