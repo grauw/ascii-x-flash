@@ -162,11 +162,10 @@ Loop:
 	di
 	call Program
 	ei
-	ld a,"."
-	call System_PrintChar
 	pop de
 	pop bc
 	inc de
+	call Application_PrintProgress
 	jr Loop
 Program:
 	ld a,(ix + FlashROM.cfiQuery.maxBufferWrite)
@@ -221,13 +220,12 @@ Loop:
 	di
 	call FlashROM_VerifyBlock
 	ei
-	push af
-	ld a,"."
-	call System_PrintChar
-	pop af
 	pop de
 	pop bc
 	inc de
+	push af
+	call Application_PrintProgress
+	pop af
 	ret nz
 	jr Loop
 	ENDP
@@ -250,6 +248,15 @@ Application_CheckProgrammable:
 	call nz,System_ThrowExceptionWithMessage
 	pop ix
 	ret
+
+; de = address
+; Modifies: af
+Application_PrintProgress:
+	ld a,0FH
+	and e
+	ret nz
+	ld a,"."
+	jp System_PrintChar
 
 ; ix = this
 ; de <- file info block
