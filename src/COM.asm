@@ -19,6 +19,7 @@ TPA_PAGE0:
 	INCLUDE "Application.asm"
 	INCLUDE "CLI.asm"
 	INCLUDE "FlashROM.asm"
+	INCLUDE "ArrayIterator.asm"
 	INCLUDE "CFIQuery.asm"
 	INCLUDE "AMDQuery.asm"
 

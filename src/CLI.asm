@@ -4,8 +4,6 @@
 CLI_BUFFER_SIZE: equ 255
 
 CLI: MACRO
-	slot:
-		Slot
 	usage:
 		db -1
 	erase:
@@ -20,6 +18,13 @@ CLI: MACRO
 		db 0
 	path:
 		dw 0
+	slotCount:
+		db 0
+	slots:
+		REPT Application_MAX_SLOTS
+	slot:
+		Slot
+		ENDM
 	buffer:
 		ds CLI_BUFFER_SIZE
 	_size:
@@ -97,11 +102,28 @@ CLI_ParseOption: PROC
 	jr z,OptionInfo
 	ld hl,CLI_errorUnknownOption
 	call System_ThrowExceptionWithMessage
-OptionSlot:
+OptionSlot: PROC
 	inc de
 	call CLI_ParseSlot
-	ld (ix + CLI.slot.id),c
+	ld b,Application_MAX_SLOTS
+	push ix
+Loop:
+	ld a,(ix + CLI.slots.0.slot.id)
+	cp c
+	ld hl,CLI_errorSameSlot
+	call z,System_ThrowExceptionWithMessage
+	cp Slot_NONE
+	jr z,Set
+	inc ix
+	djnz Loop
+	ld hl,CLI_errorTooManySlots
+	call System_ThrowExceptionWithMessage
+Set:
+	ld (ix + CLI.slots.0.slot.id),c
+	pop ix
+	inc (ix + CLI.slotCount)
 	jr Next
+	ENDP
 OptionErase:
 	ld (ix + CLI.erase),-1
 	inc de
@@ -159,10 +181,10 @@ CLI_Verify: PROC
 	bit 0,(ix + CLI.usage)
 	ld hl,CLI_messageUsage
 	call nz,System_ThrowExceptionWithMessage
-	ld a,(ix + CLI.slot.id)
-	cp Slot_NONE
+	ld a,(ix + CLI.slotCount)
+	cp 1
 	ld hl,CLI_errorNoSlot
-	call z,System_ThrowExceptionWithMessage
+	call c,System_ThrowExceptionWithMessage
 	bit 0,(ix + CLI.program)
 	jr nz,Program
 	bit 0,(ix + CLI.verify)
@@ -191,6 +213,10 @@ Dump:
 	bit 0,(ix + CLI.verify)
 	ld hl,CLI_errorDumpProgramVerify
 	call nz,System_ThrowExceptionWithMessage
+	ld a,(ix + CLI.slotCount)
+	cp 2
+	ld hl,CLI_errorTooManySlots
+	call nc,System_ThrowExceptionWithMessage
 	ret
 	ENDP
 
@@ -278,6 +304,10 @@ CLI_errorMultiplePaths:
 	db "Can not specify more than one file path.",13,10,0
 CLI_errorDumpProgramVerify:
 	db "Can not combine dump with program or verify.",13,10,0
+CLI_errorSameSlot:
+	db "Same slot specified multiple times.",13,10,0
+CLI_errorTooManySlots:
+	db "Too many slots specified.",13,10,0
 CLI_errorNoSlot:
 	db "No slot specified.",13,10,0
 CLI_errorNoFile:
@@ -287,6 +317,7 @@ CLI_messageUsage:
 	db 13,10
 	db "Options:",13,10
 	db "  /s  Slot number (required). Format: p or p-s.",13,10
+	db "      Specify up to 8 for bulk flashing.",13,10
 	db "  /e  Erase flash ROM.",13,10
 	db "  /p  Program flash ROM from file.",13,10
 	db "  /v  Verify flash ROM with file.",13,10

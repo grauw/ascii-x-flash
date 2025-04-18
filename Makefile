@@ -14,4 +14,4 @@ dist: all
 	zip -j gen/asciixf.zip bin/asciixf.com README.md CHANGES.md LICENSE
 
 run: all
-	openmsx -machine Panasonic_FS-A1GT -ext ide -ext ASCII16-X_Mapper_XL -script openmsx.tcl
+	openmsx -machine Panasonic_FS-A1GT -ext ide -ext slotexpander -ext ASCII16-X_Mapper_XL -ext ASCII16-X_Mapper_XL -script openmsx.tcl

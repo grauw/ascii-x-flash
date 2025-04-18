@@ -19,6 +19,7 @@ FlashROM: MACRO
 		dw 0
 	cfiQuery:
 		CFIQuery
+	_size:
 	ENDM
 
 ; a = slot ID
@@ -121,13 +122,23 @@ CheckLSB:
 	ENDP
 
 ; ix = this
+; Modifies: none
 FlashROM_SelectSlot:
+	push af
+	push bc
+	push de
+	push hl
 	ld h,40H
 	ld a,(ix + FlashROM.slot.id)
 	call Memory_SetSlot
 	ld h,80H
 	ld a,(ix + FlashROM.slot.id)
-	jp Memory_SetSlot
+	call Memory_SetSlot
+	pop hl
+	pop de
+	pop bc
+	pop af
+	ret
 
 ; a = nz: verbose
 ; ix = this

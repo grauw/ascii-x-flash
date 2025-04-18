@@ -1,6 +1,8 @@
 ;
 ; Main application
 ;
+Application_MAX_SLOTS: equ 8
+
 Application: MACRO
 	slotRestore1:
 		Slot
@@ -10,12 +12,16 @@ Application: MACRO
 		CLI
 	fileInfoBlock:
 		FileInfoBlock
-	flashROM:
+	flashROMs:
+		REPT Application_MAX_SLOTS
 		FlashROM
+		ENDM
+	flashIterator:
+		ArrayIterator Application_MAX_SLOTS
 	ENDM
 
 ; ix = this
-Application_Construct:
+Application_Construct: PROC
 	ld h,40H
 	call Memory_GetSlot
 	ld (ix + Application.slotRestore1.id),a
@@ -27,11 +33,25 @@ Application_Construct:
 	call CLI_Construct
 	pop ix
 	push ix
-	ld a,(ix + Application.cli.slot.id)
-	call Application_GetFlashROM
-	call FlashROM_Construct
+	ld e,ixl
+	ld d,ixh
+	ld hl,Application.cli.slots
+	add hl,de
+	call Application_CreateFlashIterator
+	ld iy,ConstructFlashROM
+	call ArrayIterator_ForEach
 	pop ix
 	ret
+; hl = slots
+; ix = flash ROM
+ConstructFlashROM:
+	push hl
+	ld a,(hl)
+	call FlashROM_Construct
+	pop hl
+	inc hl
+	ret
+	ENDP
 
 ; ix = this
 Application_Destruct:
@@ -51,10 +71,32 @@ Application_GetCLI:
 	ret
 
 ; ix = this
-; ix <- FlashROM
-Application_GetFlashROM:
-	ld de,Application.flashROM
+; ix <- flash ROMs
+Application_GetFlashROMs:
+	ld de,Application.flashROMs
 	add ix,de
+	ret
+
+; ix = this
+; ix <- flash iterator
+Application_CreateFlashIterator:
+	push af
+	push bc
+	push de
+	push hl
+	ld a,(ix + Application.cli.slotCount)
+	ld bc,FlashROM._size
+	ld e,ixl
+	ld d,ixh
+	ld hl,Application.flashROMs
+	add hl,de
+	ld de,Application.flashIterator
+	add ix,de
+	call ArrayIterator_Construct
+	pop hl
+	pop de
+	pop bc
+	pop af
 	ret
 
 ; ix = this
@@ -73,26 +115,44 @@ Application_Test:
 	ret
 
 ; ix = this
-Application_PrintInfo:
+Application_PrintInfo: PROC
 	ld a,(ix + Application.cli.info)
 	push ix
-	call Application_GetFlashROM
-	call FlashROM_Print
+	call Application_CreateFlashIterator
+	ld iy,Print
+	call ArrayIterator_ForEach
 	pop ix
 	ret
+; a = nz: verbose
+; ix = flash ROM
+Print:
+	push af
+	call FlashROM_Print
+	pop af
+	ret
+	ENDP
 
 ; ix = this
-Application_Erase:
+Application_Erase: PROC
 	bit 0,(ix + Application.cli.erase)
 	ret z
 	ld hl,Application_messageErasingChip
 	call System_Print
 	call Application_CheckProgrammable
 	push ix
-	call Application_GetFlashROM
-	call FlashROM_ChipErase
+	call Application_CreateFlashIterator
+	ld iy,ChipErase
+	call ArrayIterator_ForEach
 	pop ix
 	ret
+; ix = flash ROM
+ChipErase:
+	call FlashROM_SelectSlot
+	di
+	call FlashROM_ChipErase
+	ei
+	ret
+	ENDP
 
 ; ix = this
 Application_Program: PROC
@@ -107,7 +167,7 @@ Application_Program: PROC
 	call DOS_OpenFileHandle
 	call DOS_TerminateIfError
 	push ix
-	call Application_GetFlashROM
+	call Application_CreateFlashIterator
 	ld de,0000H
 	call Loop
 	pop ix
@@ -117,7 +177,7 @@ Application_Program: PROC
 	ret
 ; b = file handle
 ; de = physical address / 1000H
-; ix = flash ROM
+; ix = flash iterator
 Loop:
 	push bc
 	push de
@@ -131,17 +191,34 @@ Loop:
 	call DOS_TerminateIfError
 	push bc
 	push de
+	push ix
 	ld c,l
 	ld b,h
 	ld hl,Application_buffer
-	di
-	call FlashROM_ProgramBlock
-	ei
+	ld iy,ProgramBlock
+	call ArrayIterator_ForEach
+	pop ix
 	pop de
 	pop bc
 	inc de
 	call Application_PrintProgress
 	jr Loop
+; hl = source
+; de = destination / 1000H
+; bc = byte count (<= 1000H)
+; ix = flash ROM
+ProgramBlock:
+	push bc
+	push de
+	push hl
+	call FlashROM_SelectSlot
+	di
+	call FlashROM_ProgramBlock
+	ei
+	pop hl
+	pop de
+	pop bc
+	ret
 	ENDP
 
 ; ix = this
@@ -156,7 +233,7 @@ Application_Verify: PROC
 	call DOS_OpenFileHandle
 	call DOS_TerminateIfError
 	push ix
-	call Application_GetFlashROM
+	call Application_CreateFlashIterator
 	ld de,0000H
 	call Loop
 	pop ix
@@ -171,7 +248,7 @@ Application_Verify: PROC
 	jp System_Print
 ; b = file handle
 ; de = physical address / 1000H
-; ix = flash ROM
+; ix = flash iterator
 Loop:
 	push bc
 	push de
@@ -185,12 +262,13 @@ Loop:
 	call DOS_TerminateIfError
 	push bc
 	push de
+	push ix
 	ld c,l
 	ld b,h
 	ld hl,Application_buffer
-	di
-	call FlashROM_VerifyBlock
-	ei
+	ld iy,VerifyBlock
+	call ArrayIterator_ForEach
+	pop ix
 	pop de
 	pop bc
 	inc de
@@ -199,6 +277,22 @@ Loop:
 	pop af
 	ret nz
 	jr Loop
+; hl = source
+; de = destination / 1000H
+; bc = byte count (<= 1000H)
+; ix = flash ROM
+; f <- nz: not equal
+VerifyBlock:
+	push bc
+	push de
+	push hl
+	call FlashROM_SelectSlot
+	call FlashROM_VerifyBlock
+	pop hl
+	pop de
+	pop bc
+	ret z
+	jp ArrayIterator_ForEach.Break
 	ENDP
 
 ; ix = this
@@ -212,7 +306,8 @@ Application_Dump: PROC
 	call DOS_OpenFileHandle
 	call DOS_TerminateIfError
 	push ix
-	call Application_GetFlashROM
+	call Application_GetFlashROMs
+	call FlashROM_SelectSlot
 	ld de,0000H
 	call Loop
 	pop ix
@@ -248,14 +343,22 @@ Loop:
 	ENDP
 
 ; ix = this
-Application_CheckProgrammable:
+Application_CheckProgrammable: PROC
 	push ix
-	call Application_GetFlashROM
-	call FlashROM_IsProgrammable
+	call Application_CreateFlashIterator
+	ld iy,IsProgrammable
+	call ArrayIterator_ForEach
 	ld hl,Application_errorFlash
 	call nz,System_ThrowExceptionWithMessage
 	pop ix
 	ret
+; ix = flash ROM
+; f <- nz: not programmable
+IsProgrammable:
+	call FlashROM_IsProgrammable
+	ret z
+	jp ArrayIterator_ForEach.Break
+	ENDP
 
 ; de = file info block
 ; ix = this

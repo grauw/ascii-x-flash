@@ -34,6 +34,7 @@ Usage:
 Options:
 
   * `/s` Slot number (required). Format: p or p-s.
+         Specify up to 8 for bulk flashing.
   * `/e` Erase flash ROM.
   * `/p` Program flash ROM from file.
   * `/v` Verify flash ROM with file.
