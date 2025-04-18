@@ -107,11 +107,9 @@ Application_Erase:
 	ret z
 	ld hl,Application_messageErasingChip
 	call System_Print
+	call Application_CheckProgrammable
 	push ix
 	call Application_GetFlashROM
-	call FlashROM_IsProgrammable
-	ld hl,Application_errorFlash
-	call nz,System_ThrowExceptionWithMessage
 	call FlashROM_ChipErase
 	pop ix
 	ret
@@ -122,12 +120,7 @@ Application_Program: PROC
 	ret z
 	ld hl,Application_messageProgramming
 	call System_Print
-	push ix
-	call Application_GetFlashROM
-	call FlashROM_IsProgrammable
-	ld hl,Application_errorFlash
-	call nz,System_ThrowExceptionWithMessage
-	pop ix
+	call Application_CheckProgrammable
 	push ix
 	call Application_GetCLI
 	call CLI_GetFileInfoBlock_DE
@@ -253,6 +246,16 @@ Application_Dump: PROC
 	ENDP
 
 ; ix = this
+Application_CheckProgrammable:
+	push ix
+	call Application_GetFlashROM
+	call FlashROM_IsProgrammable
+	ld hl,Application_errorFlash
+	call nz,System_ThrowExceptionWithMessage
+	pop ix
+	ret
+
+; ix = this
 Application_PrintSlot:
 	ld a,(ix + Application.cli.slot)
 	and 3
@@ -276,7 +279,7 @@ Application_errorNoSlot:
 Application_errorNoFile:
 	db "No file specified.",13,10,0
 Application_errorFlash:
-	db "Flash ROM error.",13,10,0
+	db "FlashROM error.",13,10,0
 Application_messageQuery:
 	db "Querying slot ",0
 Application_messageQuery2:
