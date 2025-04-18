@@ -335,10 +335,12 @@ Loop:
 	ret z
 	call FlashROM_EnterCommandMode
 	ld (hl),25H
+	inc b
+	dec b
 	dec bc
+	jp nz,FullPage
 	ld (hl),c
 	inc c
-	jp z,FullPage
 	dec c
 	jr z,LastByte
 	ex de,hl
@@ -355,7 +357,7 @@ PollLoop:
 	inc de
 	jp Loop
 FullPage:
-	dec c
+	ld (hl),255
 	ex de,hl
 	REPT 255
 	ldi
