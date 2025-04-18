@@ -3,9 +3,9 @@
 ;
 Application: MACRO
 	slotRestore1:
-		db 0
+		Slot
 	slotRestore2:
-		db 0
+		Slot
 	cli:
 		CLI
 	fileInfoBlock:
@@ -18,23 +18,23 @@ Application: MACRO
 Application_Construct:
 	ld h,40H
 	call Memory_GetSlot
-	ld (ix + Application.slotRestore1),a
+	ld (ix + Application.slotRestore1.id),a
 	ld h,80H
 	call Memory_GetSlot
-	ld (ix + Application.slotRestore2),a
+	ld (ix + Application.slotRestore2.id),a
 	push ix
 	call Application_GetCLI
 	call CLI_Construct
 	pop ix
-	ld a,(ix + Application.cli.slot)
-	inc a
+	ld a,(ix + Application.cli.slot.id)
+	cp Slot_NONE
 	ld hl,Application_messageUsage
 	call z,System_ThrowExceptionWithMessage
 	ld h,40H
-	ld a,(ix + Application.cli.slot)
+	ld a,(ix + Application.cli.slot.id)
 	call Memory_SetSlot
 	ld h,80H
-	ld a,(ix + Application.cli.slot)
+	ld a,(ix + Application.cli.slot.id)
 	call Memory_SetSlot
 	push ix
 	call Application_GetFlashROM
@@ -45,10 +45,10 @@ Application_Construct:
 ; ix = this
 Application_Destruct:
 	ld h,40H
-	ld a,(ix + Application.slotRestore1)
+	ld a,(ix + Application.slotRestore1.id)
 	call Memory_SetSlot
 	ld h,80H
-	ld a,(ix + Application.slotRestore1)
+	ld a,(ix + Application.slotRestore1.id)
 	call Memory_SetSlot
 	ret
 
@@ -85,7 +85,11 @@ Application_Test:
 Application_PrintInfo: PROC
 	ld hl,Application_messageQuery
 	call System_Print
-	call Application_PrintSlot
+	push ix
+	ld de,Application.cli.slot
+	add ix,de
+	call Slot_Print
+	pop ix
 	ld hl,Application_messageQuery2
 	call System_Print
 	bit 0,(ix + Application.cli.info)
@@ -265,24 +269,6 @@ Application_FindFile:
 	ld e,ixl
 	ld d,ixh
 	pop ix
-	ret
-
-; ix = this
-Application_PrintSlot:
-	ld a,(ix + Application.cli.slot)
-	and 3
-	add a,"0"
-	call System_PrintChar
-	bit 7,(ix + Application.cli.slot)
-	ret z
-	ld a,"-"
-	call System_PrintChar
-	ld a,(ix + Application.cli.slot)
-	rrca
-	rrca
-	and 3
-	add a,"0"
-	call System_PrintChar
 	ret
 
 ;

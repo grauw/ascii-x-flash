@@ -15,6 +15,7 @@ TPA_PAGE0:
 	INCLUDE "DOS2Runtime.asm"
 	INCLUDE "System.asm"
 	INCLUDE "Memory.asm"
+	INCLUDE "Slot.asm"
 	INCLUDE "Application.asm"
 	INCLUDE "CLI.asm"
 	INCLUDE "FlashROM.asm"

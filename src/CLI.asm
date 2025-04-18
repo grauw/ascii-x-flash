@@ -5,7 +5,7 @@ CLI_BUFFER_SIZE: equ 255
 
 CLI: MACRO
 	slot:
-		db 0FFH
+		Slot
 	erase:
 		db 0
 	program:
@@ -97,7 +97,7 @@ CLI_ParseOption: PROC
 OptionSlot:
 	inc de
 	call CLI_ParseSlot
-	ld (ix + CLI.slot),c
+	ld (ix + CLI.slot.id),c
 	jr Next
 OptionErase:
 	ld (ix + CLI.erase),-1
