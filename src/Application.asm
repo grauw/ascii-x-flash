@@ -134,18 +134,13 @@ Loop:
 	ld b,h
 	ld hl,Application_buffer
 	di
-	call Program
+	call FlashROM_ProgramBlock
 	ei
 	pop de
 	pop bc
 	inc de
 	call Application_PrintProgress
 	jr Loop
-Program:
-	ld a,(ix + FlashROM.cfiQuery.maxBufferWrite)
-	cp 8
-	jp nc,FlashROM_ProgramBufferedBlock
-	jp FlashROM_ProgramBlock
 	ENDP
 
 ; ix = this

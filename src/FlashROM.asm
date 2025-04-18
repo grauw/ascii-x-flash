@@ -281,10 +281,10 @@ FlashROM_ChipErase: PROC
 	call FlashROM_EnterCommand
 	ld a,0FFH
 	ld hl,4000H
-Loop:
+Poll:
 	cp (hl)
 	ret z
-	jr Loop
+	jr Poll
 	ENDP
 
 ; a = value
@@ -305,7 +305,17 @@ Loop:
 ; hl = source
 ; de = destination / 1000H
 ; bc = byte count (<= 1000H)
-FlashROM_ProgramBlock: PROC
+; ix = this
+FlashROM_ProgramBlock:
+	ld a,(ix + FlashROM.cfiQuery.maxBufferWrite)
+	cp 8
+	jp nc,FlashROM_ProgramBufferBlock
+	jp FlashROM_ProgramByteBlock
+
+; hl = source
+; de = destination / 1000H
+; bc = byte count (<= 1000H)
+FlashROM_ProgramByteBlock: PROC
 	ld a,b
 	or c
 	ret z
@@ -316,6 +326,9 @@ FlashROM_ProgramBlock: PROC
 	inc b
 	ld c,b
 	ld b,a
+	call Program
+	jp FlashROM_ResetMapper
+Program:
 Loop:
 	ld a,(de)
 	call FlashROM_Program
@@ -324,14 +337,18 @@ Loop:
 	djnz Loop
 	dec c
 	jr nz,Loop
-	jp FlashROM_ResetMapper
+	ret
 	ENDP
 
 ; hl = source
-; de = destination
-; bc = byte count
-FlashROM_ProgramBuffered: PROC
+; de = destination / 1000H
+; bc = byte count (<= 1000H)
+FlashROM_ProgramBufferBlock: PROC
 	ex de,hl
+	call FlashROM_SelectMapperAddress
+	call Program
+	jp FlashROM_ResetMapper
+Program:
 Loop:
 	ld a,b
 	or c
@@ -353,9 +370,9 @@ LastByte:
 	ld a,(de)
 	ld (hl),a
 	ld (hl),29H
-PollLoop:
+Poll:
 	cp (hl)
-	jr nz,PollLoop
+	jr nz,Poll
 	inc hl
 	inc de
 	jp Loop
@@ -372,16 +389,6 @@ FullPage:
 ; hl = source
 ; de = destination / 1000H
 ; bc = byte count (<= 1000H)
-FlashROM_ProgramBufferedBlock:
-	ex de,hl
-	call FlashROM_SelectMapperAddress
-	ex de,hl
-	call FlashROM_ProgramBuffered
-	jp FlashROM_ResetMapper
-
-; hl = source
-; de = destination / 1000H
-; bc = byte count (<= 1000H)
 ; f <- nz: not equal
 FlashROM_VerifyBlock: PROC
 	ex de,hl
@@ -394,11 +401,12 @@ FlashROM_VerifyBlock: PROC
 ; bc = byte count
 ; f <- nz: not equal
 Verify:
+Loop:
 	ld a,(de)
 	inc de
 	cpi
 	ret nz
-	jp pe,Verify
+	jp pe,Loop
 	ret
 	ENDP
 
