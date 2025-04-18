@@ -246,6 +246,23 @@ FlashROM_Reset:
 	ld (4000H),a
 	ret
 
+; hl = polling address
+; a <- status (DQ6 1: toggling, DQ2 1: toggling)
+; f <- nz: error
+FlashROM_WaitDQ6:
+	ld a,(hl)
+	and 01000100B  ; DQ6 busy toggle, DQ2 erase toggle
+	xor (hl)
+	bit 6,a        ; DQ6 busy toggle
+	ret z
+	bit 5,a        ; DQ5 error
+	jr z,FlashROM_WaitDQ6
+	ld a,(hl)
+	and 01000100B  ; DQ6 busy toggle, DQ2 erase toggle
+	xor (hl)
+	bit 6,a        ; DQ6 busy toggle
+	ret
+
 ; Modifies: a
 FlashROM_ClearStatus:
 	ld a,71H
@@ -286,13 +303,12 @@ FlashROM_ChipErase: PROC
 	ld (hl),080H
 	FlashROM_Unlock_M
 	ld (hl),010H
+	call FlashROM_WaitDQ6
 	exx
-	ld a,0FFH
-	ld hl,4000H
-Poll:
-	cp (hl)
 	ret z
-	jr Poll
+	call FlashROM_Reset
+	ld hl,FlashROM_errorOperation
+	call System_ThrowExceptionWithMessage
 	ENDP
 
 ; hl = source
@@ -325,8 +341,12 @@ FlashROM_ProgramByteBlock: PROC
 	ld b,a
 	call Program
 	jp FlashROM_ResetMapper
-Program:
 Loop:
+	inc hl
+	djnz Program
+	dec c
+	ret z
+Program:
 	exx
 	FlashROM_Unlock_M
 	ld (hl),c
@@ -334,14 +354,21 @@ Loop:
 	ld a,(de)
 	ld (hl),a
 	inc de
-Poll:
+	REPT 36
 	cp (hl)
-	jr nz,Poll
-	inc hl
-	djnz Loop
-	dec c
-	jr nz,Loop
-	ret
+	jr z,Loop
+	ENDM
+	call FlashROM_WaitDQ6
+	jr nz,Error
+	dec de
+	ld a,(de)
+	inc de
+	cp (hl)
+	jp z,Loop
+Error:
+	call FlashROM_Reset
+	ld hl,FlashROM_errorOperation
+	call System_ThrowExceptionWithMessage
 	ENDP
 
 ; hl = source
@@ -353,8 +380,9 @@ FlashROM_ProgramBufferBlock: PROC
 	call FlashROM_SelectMapperAddress
 	call Program
 	jp FlashROM_ResetMapper
-Program:
 Loop:
+	inc hl
+Program:
 	ld a,b
 	or c
 	ret z
@@ -369,20 +397,11 @@ Loop:
 	ld (hl),c
 	inc c
 	dec c
-	jr z,LastByte
+	jp z,LastByte
 	ex de,hl
 	ldir
 	ex de,hl
-LastByte:
-	ld a,(de)
-	ld (hl),a
-	ld (hl),029H
-	inc de
-Poll:
-	cp (hl)
-	jr nz,Poll
-	inc hl
-	jp Loop
+	jp LastByte
 FullPage:
 	ld (hl),255
 	ex de,hl
@@ -390,7 +409,26 @@ FullPage:
 	ldi
 	ENDM
 	ex de,hl
-	jp LastByte
+LastByte:
+	ld a,(de)
+	ld (hl),a
+	ld (hl),029H
+	inc de
+	REPT 64
+	cp (hl)
+	jp z,Loop
+	ENDM
+	call FlashROM_WaitDQ6
+	jr nz,Error
+	dec de
+	ld a,(de)
+	inc de
+	cp (hl)
+	jp z,Loop
+Error:
+	call FlashROM_Reset
+	ld hl,FlashROM_errorOperation
+	call System_ThrowExceptionWithMessage
 	ENDP
 
 ; hl = source
@@ -534,3 +572,5 @@ FlashROM_messageContinuityBad:
 	db "Continuity check: BAD. Check pins for bridges.",13,10,0
 FlashROM_messageContinuityBadStatus:
 	db "Continuity check: BAD status.",13,10,0
+FlashROM_errorOperation:
+	db "Operation failed.",13,10,0
