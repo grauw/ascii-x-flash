@@ -102,6 +102,7 @@ Application_Program: PROC
 	call System_Print
 	call Application_CheckProgrammable
 	call Application_FindFile
+	call Application_CheckCapacity
 	ld a,1
 	call DOS_OpenFileHandle
 	call DOS_TerminateIfError
@@ -150,6 +151,7 @@ Application_Verify: PROC
 	ld hl,Application_messageVerifying
 	call System_Print
 	call Application_FindFile
+	call Application_CheckCapacity
 	ld a,1
 	call DOS_OpenFileHandle
 	call DOS_TerminateIfError
@@ -218,6 +220,62 @@ Application_CheckProgrammable:
 	pop ix
 	ret
 
+; de = file info block
+; ix = this
+; f <- c: exceeds capacity
+; de <- file info block
+Application_CheckCapacity: PROC
+	push de
+	push ix
+	push de
+	call Application_CreateFlashIterator
+	ex (sp),ix
+	ld l,(ix + FileInfoBlock.fileSize + 0)
+	ld h,(ix + FileInfoBlock.fileSize + 1)
+	ld e,(ix + FileInfoBlock.fileSize + 2)
+	ld d,(ix + FileInfoBlock.fileSize + 3)
+	pop ix
+	call Check
+	ld hl,Application_warningCapacity
+	call c,System_Print
+	pop ix
+	pop de
+	ret
+Check:
+	ld a,l
+	or h
+	or e
+	or d
+	ret z
+	call Dec_DEHL
+	call Sla_DEHL
+	call nc,Sla_DEHL
+	call nc,Sla_DEHL
+	call nc,Sla_DEHL
+	ld iy,CheckCapacity
+	call nc,ArrayIterator_ForEach
+	ret
+Dec_DEHL:
+	ld bc,-1
+	add hl,bc
+	ret c
+	dec de
+	ret
+Sla_DEHL:
+	add hl,hl
+	ex de,hl
+	adc hl,hl
+	ex de,hl
+	ret
+; de = physical address / 1000H
+; ix = this
+; f <- c: out of range
+CheckCapacity:
+	call FlashROM_CheckCapacity
+	ret nc
+	jp ArrayIterator_ForEach.Break
+	ENDP
+
 ; de = address
 ; Modifies: af
 Application_PrintProgress:
@@ -248,6 +306,8 @@ Application_FindFile:
 ;
 Application_errorFlash:
 	db "FlashROM error.",13,10,0
+Application_warningCapacity:
+	db "File exceeds capacity, truncating.",13,10,0
 Application_messageErasingChip:
 	db "Erasing chip...",13,10,0
 Application_messageProgramming:

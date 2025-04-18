@@ -325,6 +325,8 @@ FlashROM_ProgramBlock:
 ; de = destination / 1000H
 ; bc = byte count (<= 1000H)
 FlashROM_ProgramByteBlock: PROC
+	call FlashROM_CheckCapacity
+	ret c
 	ld a,b
 	or c
 	ret z
@@ -375,6 +377,8 @@ Error:
 ; de = destination / 1000H
 ; bc = byte count (<= 1000H)
 FlashROM_ProgramBufferBlock: PROC
+	call FlashROM_CheckCapacity
+	ret c
 	call FlashROM_LoadCommandAddressExx
 	ex de,hl
 	call FlashROM_SelectMapperAddress
@@ -436,11 +440,16 @@ Error:
 ; bc = byte count (<= 1000H)
 ; f <- nz: not equal
 FlashROM_VerifyBlock: PROC
+	call FlashROM_CheckCapacity
+	jr c,OutOfRange
 	ex de,hl
 	call FlashROM_SelectMapperAddress
 	ex de,hl
 	call Verify
 	jp FlashROM_ResetMapper
+OutOfRange:
+	xor a
+	ret
 ; hl = source
 ; de = destination
 ; bc = byte count
