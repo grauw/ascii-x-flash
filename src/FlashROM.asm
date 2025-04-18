@@ -5,6 +5,8 @@ FlashROM_COMMAND_ADDRESS: equ 0AAAH
 FlashROM_BLOCK_SIZE: equ 1000H
 
 FlashROM: MACRO
+	slot:
+		Slot
 	x8x16:
 		db 0
 	manufacturerID:
@@ -17,8 +19,11 @@ FlashROM: MACRO
 		CFIQuery
 	ENDM
 
+; a = slot ID
 ; ix = this
 FlashROM_Construct:
+	ld (ix + FlashROM.slot.id),a
+	call FlashROM_SelectSlot
 	call FlashROM_ConstructCFIQuery
 	call FlashROM_ConstructManufacturerDeviceID
 	call FlashROM_CheckContinuity
@@ -89,7 +94,17 @@ FlashROM_IsProgrammable:
 	ret
 
 ; ix = this
+FlashROM_SelectSlot:
+	ld h,40H
+	ld a,(ix + FlashROM.slot.id)
+	call Memory_SetSlot
+	ld h,80H
+	ld a,(ix + FlashROM.slot.id)
+	jp Memory_SetSlot
+
+; ix = this
 FlashROM_Print:
+	call FlashROM_PrintQueryingSlot
 	call FlashROM_IsFlash
 	ld hl,FlashROM_messageNotFlash
 	call nz,System_Print
@@ -107,6 +122,7 @@ FlashROM_Print:
 
 ; ix = this
 FlashROM_PrintVerbose:
+	call FlashROM_PrintQueryingSlot
 	call FlashROM_IsFlash
 	ld hl,FlashROM_messageNotFlash
 	call nz,System_Print
@@ -121,6 +137,15 @@ FlashROM_PrintVerbose:
 	pop ix
 	call System_PrintCrLf
 	call FlashROM_PrintContinuity
+	ret
+
+; ix = this
+FlashROM_PrintQueryingSlot:
+	ld hl,FlashROM_messageQuery
+	call System_Print
+	call Slot_Print
+	ld hl,FlashROM_messageQuery2
+	call System_Print
 	ret
 
 ; ix = this
@@ -480,6 +505,10 @@ FlashROM_GetMapperAddress_Test:
 	ret
 
 ;
+FlashROM_messageQuery:
+	db "Querying slot ",0
+FlashROM_messageQuery2:
+	db " for FlashROM information:",13,10,10,0
 FlashROM_messageNotFlash:
 	db "Warning: Not a FlashROM!",13,10,10,0
 FlashROM_messageManufacturerID:

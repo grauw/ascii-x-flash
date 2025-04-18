@@ -26,13 +26,8 @@ Application_Construct:
 	call Application_GetCLI
 	call CLI_Construct
 	pop ix
-	ld h,40H
-	ld a,(ix + Application.cli.slot.id)
-	call Memory_SetSlot
-	ld h,80H
-	ld a,(ix + Application.cli.slot.id)
-	call Memory_SetSlot
 	push ix
+	ld a,(ix + Application.cli.slot.id)
 	call Application_GetFlashROM
 	call FlashROM_Construct
 	pop ix
@@ -79,15 +74,6 @@ Application_Test:
 
 ; ix = this
 Application_PrintInfo: PROC
-	ld hl,Application_messageQuery
-	call System_Print
-	push ix
-	ld de,Application.cli.slot
-	add ix,de
-	call Slot_Print
-	pop ix
-	ld hl,Application_messageQuery2
-	call System_Print
 	bit 0,(ix + Application.cli.info)
 	jr nz,Verbose
 	push ix
@@ -275,10 +261,6 @@ Application_FindFile:
 ;
 Application_errorFlash:
 	db "FlashROM error.",13,10,0
-Application_messageQuery:
-	db "Querying slot ",0
-Application_messageQuery2:
-	db " for FlashROM information:",13,10,10,0
 Application_messageErasingChip:
 	db "Erasing chip...",13,10,0
 Application_messageProgramming:
