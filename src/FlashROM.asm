@@ -2,6 +2,7 @@
 ; FlashROM
 ;
 FlashROM_COMMAND_ADDRESS: equ 0AAAH
+FlashROM_BLOCK_SIZE: equ 1000H
 
 FlashROM: MACRO
 	x8x16:

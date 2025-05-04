@@ -146,7 +146,7 @@ Loop:
 	push bc
 	push de
 	ld de,Application_buffer
-	ld hl,1000H
+	ld hl,FlashROM_BLOCK_SIZE
 	call DOS_ReadFromFileHandle
 	pop de
 	pop bc
@@ -210,7 +210,7 @@ Loop:
 	push bc
 	push de
 	ld de,Application_buffer
-	ld hl,1000H
+	ld hl,FlashROM_BLOCK_SIZE
 	call DOS_ReadFromFileHandle
 	pop de
 	pop bc
@@ -309,4 +309,4 @@ Application_messageUsage:
 	db "  /i  Display flash ROM information.",13,10,0
 
 Application_buffer:
-	ds 1000H
+	ds FlashROM_BLOCK_SIZE
