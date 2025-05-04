@@ -114,9 +114,6 @@ FlashCommand_ChipErase:
 ; de = source
 ; bc = byte count
 FlashCommand_ProgramByteBlock: PROC
-	ld a,b
-	or c
-	ret z
 	call FlashCommand_LoadAddressExx
 	exx
 	ld c,0A0H
@@ -165,10 +162,10 @@ FlashCommand_ProgramBufferBlock: PROC
 	jr Program
 Loop:
 	inc hl
-Program:
 	ld a,b
 	or c
 	ret z
+Program:
 	exx
 	FlashCommand_Unlock_M
 	exx

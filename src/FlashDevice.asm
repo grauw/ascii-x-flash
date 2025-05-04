@@ -230,48 +230,50 @@ FlashDevice_PrintContinuity:
 	ld hl,FlashDevice_messageContinuityBadStatus
 	jp System_PrintLn
 
+; ix = this
 FlashDevice_ChipErase:
-	equ FlashCommand_ChipErase
+	call SlotDevice_Select
+	di
+	call FlashCommand_ChipErase
+	ei
+	ret
 
 ; hl = source
 ; de = destination / 1000H
 ; bc = byte count (<= 1000H)
 ; ix = this
-FlashDevice_ProgramBlock:
+FlashDevice_ProgramBlock: PROC
+	ld a,b
+	or c
+	ret z
+	call FlashDevice_CheckCapacity
+	ret c
+	call SlotDevice_Select
+	ex de,hl
+	call ASCII16XMapper_SelectAddress
+	di
+	call Program
+	ei
+	jp ASCII16XMapper_Reset
+Program:
 	ld a,(ix + FlashDevice.cfiQuery.maxBufferWrite)
 	cp 8
-	jp nc,FlashDevice_ProgramBufferBlock
-	jp FlashDevice_ProgramByteBlock
+	jp nc,FlashCommand_ProgramBufferBlock
+	jp FlashCommand_ProgramByteBlock
+	ENDP
 
 ; hl = source
 ; de = destination / 1000H
 ; bc = byte count (<= 1000H)
-FlashDevice_ProgramByteBlock:
-	call FlashDevice_CheckCapacity
-	ret c
-	ex de,hl
-	call ASCII16XMapper_SelectAddress
-	call FlashCommand_ProgramByteBlock
-	jp ASCII16XMapper_Reset
-
-; hl = source
-; de = destination / 1000H
-; bc = byte count (<= 1000H)
-FlashDevice_ProgramBufferBlock:
-	call FlashDevice_CheckCapacity
-	ret c
-	ex de,hl
-	call ASCII16XMapper_SelectAddress
-	call FlashCommand_ProgramBufferBlock
-	jp ASCII16XMapper_Reset
-
-; hl = source
-; de = destination / 1000H
-; bc = byte count (<= 1000H)
+; ix = this
 ; f <- nz: not equal
 FlashDevice_VerifyBlock: PROC
+	ld a,b
+	or c
+	ret z
 	call FlashDevice_CheckCapacity
 	jr c,OutOfRange
+	call SlotDevice_Select
 	ex de,hl
 	call ASCII16XMapper_SelectAddress
 	ex de,hl
@@ -285,7 +287,12 @@ OutOfRange:
 ; hl = source / 1000H
 ; de = destination
 ; bc = byte count (<= 1000H)
+; ix = this
 FlashDevice_ReadBlock:
+	ld a,b
+	or c
+	ret z
+	call SlotDevice_Select
 	call ASCII16XMapper_SelectAddress
 	call FlashCommand_ReadBlock
 	jp ASCII16XMapper_Reset

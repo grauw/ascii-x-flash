@@ -158,11 +158,7 @@ Application_Erase: PROC
 	ret
 ; ix = flash device
 ChipErase:
-	call SlotDevice_Select
-	di
-	call FlashDevice_ChipErase
-	ei
-	ret
+	equ FlashDevice_ChipErase
 	ENDP
 
 ; ix = this
@@ -222,10 +218,7 @@ ProgramBlock:
 	push bc
 	push de
 	push hl
-	call SlotDevice_Select
-	di
 	call FlashDevice_ProgramBlock
-	ei
 	pop hl
 	pop de
 	pop bc
@@ -297,7 +290,6 @@ VerifyBlock:
 	push bc
 	push de
 	push hl
-	call SlotDevice_Select
 	call FlashDevice_VerifyBlock
 	pop hl
 	pop de
@@ -318,7 +310,6 @@ Application_Dump: PROC
 	call DOS_TerminateIfError
 	push ix
 	call Application_GetFlashDevices
-	call SlotDevice_Select
 	ld de,0000H
 	call Loop
 	pop ix
