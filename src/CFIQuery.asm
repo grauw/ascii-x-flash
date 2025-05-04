@@ -125,6 +125,33 @@ Loop:
 	ret
 	ENDP
 
+; Some devices (e.g. M29W640F) specify a max buffer write (“page size”) but do
+; not support the Write Buffer Program command (25H). This device specifies the
+; typical / max buffer write timeout as 0.
+; Conversely, some devices (e.g. M29W640G) do support the Write Buffer Program
+; command, and specify a max buffer write, but still specifies buffer write
+; timeout as 0. Contrary to what the datasheet claims, btw.
+; Best heuristic is to assume buffer write is supported for page sizes >= 32.
+; To my knowledge, all devices that support buffer write specify a page size
+; of at least 32, and those that don’t specify at most 16.
+; ix = this
+; a <- write buffer program page mask (max size - 1), 0: not supported
+CFIQuery_GetBufferPageMask: PROC
+	call CFIQuery_HasSignature
+	ld a,0
+	ret nz
+	ld a,(ix + CFIQuery.maxBufferWrite)
+	and a
+	ret z
+	ld b,a
+	ld a,1
+Loop:
+	add a,a
+	djnz Loop
+	dec a
+	ret
+	ENDP
+
 ; ix = this
 CFIQuery_Print:
 	ld hl,CFIQuery_message

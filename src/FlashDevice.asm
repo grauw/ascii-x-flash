@@ -16,6 +16,8 @@ FlashDevice: MACRO
 		db 0
 	capacity:
 		dw 0
+	bufferPageMask:
+		db 0
 	cfiQuery:
 		CFIQuery
 	_size:
@@ -30,6 +32,7 @@ FlashDevice_Construct:
 	call FlashDevice_ConstructManufacturerDeviceID
 	call FlashDevice_ConstructContinuity
 	call FlashDevice_ConstructCapacity
+	call FlashDevice_ConstructBufferPageMask
 	ret
 
 ; ix = this
@@ -86,6 +89,15 @@ FlashDevice_ConstructCapacity:
 	pop ix
 	ld (ix + FlashDevice.capacity + 0),l
 	ld (ix + FlashDevice.capacity + 1),h
+	ret
+
+; ix = this
+FlashDevice_ConstructBufferPageMask:
+	push ix
+	call FlashDevice_GetCFIQuery
+	call CFIQuery_GetBufferPageMask
+	pop ix
+	ld (ix + FlashDevice.bufferPageMask),a
 	ret
 
 ; ix = this
@@ -268,8 +280,11 @@ FlashDevice_ProgramBlock: PROC
 	ei
 	jp ASCII16XMapper_Reset
 Program:
-	ld a,(ix + FlashDevice.cfiQuery.maxBufferWrite)
-	cp 8
+	ld a,c
+	and a
+	jp nz,FlashCommand_ProgramByteBlock
+	ld a,(ix + FlashDevice.bufferPageMask)
+	cp 32 - 1
 	jp nc,FlashCommand_ProgramBufferBlock
 	jp FlashCommand_ProgramByteBlock
 	ENDP

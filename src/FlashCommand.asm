@@ -162,50 +162,50 @@ Program:
 	ret
 	ENDP
 
-; hl = destination
+; a = write buffer size - 1
+; hl = destination (buffer page aligned)
 ; de = source
-; bc = byte count
+; bc = byte count (multiple of buffer size)
 FlashCommand_ProgramBufferBlock: PROC
+	push ix
 	exx
+	ld ix,Write
+	ld c,a
+	cpl
+	ld e,a
+	ld d,0
+	add ix,de
+	add ix,de
 	FlashCommand_LoadUnlock_M
 	exx
-	jr Program
+	call Program
+	pop ix
+	ret
 Loop:
 	call FlashCommand_CheckWait
 	inc hl
-	ld a,b
-	or c
-	ret z
 Program:
 	exx
 	FlashCommand_Unlock_M
+	ld a,c
 	exx
 	ld (hl),025H
-	inc b
-	dec b
-	dec bc
-	jp nz,FullPage
-	ld (hl),c
-	inc c
-	dec c
-	jp z,LastByte
+	ld (hl),a
 	ex de,hl
-	ldir
-	ex de,hl
-	jp LastByte
-FullPage:
-	ld (hl),255
-	ex de,hl
+	jp ix
+Write:
 	REPT 255
 	ldi
 	ENDM
+	ld a,(hl)
+	ldi
 	ex de,hl
-LastByte:
-	ld a,(de)
-	ld (hl),a
+	dec hl
 	ld (hl),029H
-	inc de
-	jp Loop
+	jp pe,Loop
+	call FlashCommand_CheckWait
+	inc hl
+	ret
 	ENDP
 
 ; hl = source
