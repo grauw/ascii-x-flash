@@ -12,9 +12,10 @@ Application: MACRO
 		CLI
 	fileInfoBlock:
 		FileInfoBlock
-	flashROMs:
+	flashDevices:
 		REPT Application_MAX_SLOTS
-		FlashROM
+	flashDevice:
+		FlashDevice
 		ENDM
 	flashIterator:
 		ArrayIterator Application_MAX_SLOTS
@@ -41,16 +42,16 @@ Application_Construct: PROC
 	ld hl,Application.cli.slots
 	add hl,de
 	call Application_CreateFlashIterator
-	ld iy,ConstructFlashROM
+	ld iy,ConstructFlashDevice
 	call ArrayIterator_ForEach
 	pop ix
 	ret
 ; hl = slots
-; ix = flash ROM
-ConstructFlashROM:
+; ix = flash device
+ConstructFlashDevice:
 	push hl
 	ld a,(hl)
-	call FlashROM_Construct
+	call FlashDevice_Construct
 	pop hl
 	inc hl
 	ret
@@ -74,9 +75,9 @@ Application_GetCLI:
 	ret
 
 ; ix = this
-; ix <- flash ROMs
-Application_GetFlashROMs:
-	ld de,Application.flashROMs
+; ix <- flash devices
+Application_GetFlashDevices:
+	ld de,Application.flashDevices
 	add ix,de
 	ret
 
@@ -88,10 +89,10 @@ Application_CreateFlashIterator:
 	push de
 	push hl
 	ld a,(ix + Application.cli.slotCount)
-	ld bc,FlashROM._size
+	ld bc,FlashDevice._size
 	ld e,ixl
 	ld d,ixh
-	ld hl,Application.flashROMs
+	ld hl,Application.flashDevices
 	add hl,de
 	ld de,Application.flashIterator
 	add ix,de
@@ -120,7 +121,7 @@ Application_Run:
 
 ; ix = this
 Application_Test:
-	call FlashROM_GetMapperAddress_Test
+	call ASCII16XMapper_GetAddress_Test
 	ret
 
 ; ix = this
@@ -134,10 +135,10 @@ Application_PrintInfo: PROC
 	pop ix
 	ret
 ; a = nz: verbose
-; ix = flash ROM
+; ix = flash device
 Print:
 	push af
-	call FlashROM_Print
+	call FlashDevice_Print
 	pop af
 	ret
 	ENDP
@@ -155,11 +156,11 @@ Application_Erase: PROC
 	call ArrayIterator_ForEach
 	pop ix
 	ret
-; ix = flash ROM
+; ix = flash device
 ChipErase:
-	call FlashROM_SelectSlot
+	call SlotDevice_Select
 	di
-	call FlashROM_ChipErase
+	call FlashDevice_ChipErase
 	ei
 	ret
 	ENDP
@@ -192,7 +193,7 @@ Loop:
 	push bc
 	push de
 	ld de,Application_buffer
-	ld hl,FlashROM_BLOCK_SIZE
+	ld hl,FlashDevice_BLOCK_SIZE
 	call DOS_ReadFromFileHandle
 	pop de
 	pop bc
@@ -216,14 +217,14 @@ Loop:
 ; hl = source
 ; de = destination / 1000H
 ; bc = byte count (<= 1000H)
-; ix = flash ROM
+; ix = flash device
 ProgramBlock:
 	push bc
 	push de
 	push hl
-	call FlashROM_SelectSlot
+	call SlotDevice_Select
 	di
-	call FlashROM_ProgramBlock
+	call FlashDevice_ProgramBlock
 	ei
 	pop hl
 	pop de
@@ -263,7 +264,7 @@ Loop:
 	push bc
 	push de
 	ld de,Application_buffer
-	ld hl,FlashROM_BLOCK_SIZE
+	ld hl,FlashDevice_BLOCK_SIZE
 	call DOS_ReadFromFileHandle
 	pop de
 	pop bc
@@ -290,14 +291,14 @@ Loop:
 ; hl = source
 ; de = destination / 1000H
 ; bc = byte count (<= 1000H)
-; ix = flash ROM
+; ix = flash device
 ; f <- nz: not equal
 VerifyBlock:
 	push bc
 	push de
 	push hl
-	call FlashROM_SelectSlot
-	call FlashROM_VerifyBlock
+	call SlotDevice_Select
+	call FlashDevice_VerifyBlock
 	pop hl
 	pop de
 	pop bc
@@ -316,8 +317,8 @@ Application_Dump: PROC
 	call DOS_OpenFileHandle
 	call DOS_TerminateIfError
 	push ix
-	call Application_GetFlashROMs
-	call FlashROM_SelectSlot
+	call Application_GetFlashDevices
+	call SlotDevice_Select
 	ld de,0000H
 	call Loop
 	pop ix
@@ -327,27 +328,27 @@ Application_Dump: PROC
 	ret
 ; b = file handle
 ; de = physical address / 1000H
-; ix = flash ROM
+; ix = flash device
 Loop:
 	push bc
 	push de
 	push bc
 	ex de,hl
-	ld bc,FlashROM_BLOCK_SIZE
+	ld bc,FlashDevice_BLOCK_SIZE
 	ld de,Application_buffer
 	di
-	call FlashROM_ReadBlock
+	call FlashDevice_ReadBlock
 	ei
 	pop bc
 	ld de,Application_buffer
-	ld hl,FlashROM_BLOCK_SIZE
+	ld hl,FlashDevice_BLOCK_SIZE
 	call DOS_WriteToFileHandle
 	pop de
 	pop bc
 	call DOS_TerminateIfError
 	inc de
 	call Application_PrintProgress
-	call FlashROM_CheckCapacity
+	call FlashDevice_CheckCapacity
 	jr nc,Loop
 	ret
 	ENDP
@@ -362,10 +363,10 @@ Application_CheckProgrammable: PROC
 	call nz,System_ThrowExceptionWithMessage
 	pop ix
 	ret
-; ix = flash ROM
+; ix = flash device
 ; f <- nz: not programmable
 IsProgrammable:
-	call FlashROM_IsProgrammable
+	call FlashDevice_IsProgrammable
 	ret z
 	jp ArrayIterator_ForEach.Break
 	ENDP
@@ -421,7 +422,7 @@ Sla_DEHL:
 ; ix = this
 ; f <- c: out of range
 CheckCapacity:
-	call FlashROM_CheckCapacity
+	call FlashDevice_CheckCapacity
 	ret nc
 	jp ArrayIterator_ForEach.Break
 	ENDP
@@ -492,4 +493,4 @@ Application_messageVerifyFail:
 	db "Verification failed.",0
 
 Application_buffer:
-	ds FlashROM_BLOCK_SIZE
+	ds FlashDevice_BLOCK_SIZE
