@@ -169,7 +169,7 @@ FlashROM_CheckContinuity: PROC
 	ld (ix + FlashROM.continuity),1
 	call FlashROM_SupportsContinuity
 	ret nz
-	ld (ix + FlashROM.continuity),0
+	ld (ix + FlashROM.continuity),2
 	ld hl,6000H + (5554ABH >> 14)
 	ld (hl),l
 	ld hl,7000H + (2AAB54H >> 14)
@@ -178,7 +178,7 @@ FlashROM_CheckContinuity: PROC
 	call FlashROM_ReadStatus
 	bit 0,a
 	jr nz,Bad
-	ld (ix + FlashROM.continuity),2
+	ld (ix + FlashROM.continuity),0
 	ld a,0FFH
 	ld (4000H + (5554ABH & 3FFFH)),a
 	ld a,00H
