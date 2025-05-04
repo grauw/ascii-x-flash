@@ -11,8 +11,8 @@ FlashCommand_CFIQuery:
 	ret
 
 FlashCommand_AutoSelect:
-	call FlashCommand_LoadAddressExx
 	exx
+	FlashCommand_LoadUnlock_M
 	FlashCommand_Unlock_M
 	ld (hl),090H
 	exx
@@ -78,14 +78,12 @@ FlashCommand_ReadStatus:
 	ld a,(4000H)
 	ret
 
-; hl' <- Command 1st cycle address
-; de' <- Command 2nd cycle address
-FlashCommand_LoadAddressExx:
-	exx
+; hl <- Command 1st cycle address
+; de <- Command 2nd cycle address
+FlashCommand_LoadUnlock_M: MACRO
 	ld hl,4000H + FlashCommand_ADDRESS
 	ld de,4000H + (FlashCommand_ADDRESS >> 1)
-	exx
-	ret
+	ENDM
 
 ; hl = Command 1st cycle address
 ; de = Command 2nd cycle address
@@ -97,8 +95,8 @@ FlashCommand_Unlock_M: MACRO
 	ENDM
 
 FlashCommand_ChipErase:
-	call FlashCommand_LoadAddressExx
 	exx
+	FlashCommand_LoadUnlock_M
 	FlashCommand_Unlock_M
 	ld (hl),080H
 	FlashCommand_Unlock_M
@@ -114,8 +112,8 @@ FlashCommand_ChipErase:
 ; de = source
 ; bc = byte count
 FlashCommand_ProgramByteBlock: PROC
-	call FlashCommand_LoadAddressExx
 	exx
+	FlashCommand_LoadUnlock_M
 	ld c,0A0H
 	exx
 	ld a,c
@@ -158,7 +156,9 @@ Error:
 ; de = source
 ; bc = byte count
 FlashCommand_ProgramBufferBlock: PROC
-	call FlashCommand_LoadAddressExx
+	exx
+	FlashCommand_LoadUnlock_M
+	exx
 	jr Program
 Loop:
 	inc hl
