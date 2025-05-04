@@ -67,6 +67,25 @@ FlashCommand_WaitDQ6:
 	bit 6,a        ; DQ6 busy toggle
 	ret
 
+; a = expected value
+; hl = polling address
+FlashCommand_CheckWait: PROC
+	REPT 128
+	cp (hl)
+	ret z
+	ENDM
+	push af
+	call FlashCommand_WaitDQ6
+	jr nz,Error
+	pop af
+	cp (hl)
+	ret z
+Error:
+	call FlashCommand_Reset
+	ld hl,FlashCommand_errorOperation
+	call System_ThrowExceptionWithMessage
+	ENDP
+
 ; Modifies: a
 FlashCommand_ClearStatus:
 	ld a,71H
@@ -105,12 +124,10 @@ FlashCommand_ChipErase:
 	ld (hl),080H
 	FlashCommand_Unlock_M
 	ld (hl),010H
-	call FlashCommand_WaitDQ6
+	ld a,0FFH
+	call FlashCommand_CheckWait
 	exx
-	ret z
-	call FlashCommand_Reset
-	ld hl,FlashCommand_errorOperation
-	call System_ThrowExceptionWithMessage
+	ret
 
 ; hl = destination
 ; de = source
@@ -127,10 +144,8 @@ FlashCommand_ProgramByteBlock: PROC
 	ld b,a
 	jr Program
 Loop:
+	call FlashCommand_CheckWait
 	inc hl
-	djnz Program
-	dec c
-	ret z
 Program:
 	exx
 	FlashCommand_Unlock_M
@@ -139,21 +154,12 @@ Program:
 	ld a,(de)
 	ld (hl),a
 	inc de
-	REPT 36
-	cp (hl)
-	jr z,Loop
-	ENDM
-	call FlashCommand_WaitDQ6
-	jr nz,Error
-	dec de
-	ld a,(de)
-	inc de
-	cp (hl)
-	jp z,Loop
-Error:
-	call FlashCommand_Reset
-	ld hl,FlashCommand_errorOperation
-	call System_ThrowExceptionWithMessage
+	djnz Loop
+	dec c
+	jr nz,Loop
+	call FlashCommand_CheckWait
+	inc hl
+	ret
 	ENDP
 
 ; hl = destination
@@ -165,6 +171,7 @@ FlashCommand_ProgramBufferBlock: PROC
 	exx
 	jr Program
 Loop:
+	call FlashCommand_CheckWait
 	inc hl
 	ld a,b
 	or c
@@ -198,21 +205,7 @@ LastByte:
 	ld (hl),a
 	ld (hl),029H
 	inc de
-	REPT 64
-	cp (hl)
-	jp z,Loop
-	ENDM
-	call FlashCommand_WaitDQ6
-	jr nz,Error
-	dec de
-	ld a,(de)
-	inc de
-	cp (hl)
-	jp z,Loop
-Error:
-	call FlashCommand_Reset
-	ld hl,FlashCommand_errorOperation
-	call System_ThrowExceptionWithMessage
+	jp Loop
 	ENDP
 
 ; hl = source
