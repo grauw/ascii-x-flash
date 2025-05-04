@@ -18,27 +18,31 @@ FlashCommand_AutoSelect:
 	exx
 	ret
 
-; c <- 0: bad, 1: good, 2: bad status
-FlashCommand_CheckContinuity:
-	ld c,2
+; a <- 0: bad, 1: good, 2: bad status
+FlashCommand_CheckContinuity: PROC
+	call Check
+	push af
+	call ASCII16XMapper_Reset
+	pop af
+	ret
+Check:
 	ld hl,6000H + (5554ABH >> 14)
 	ld (hl),l
 	ld hl,7000H + (2AAB54H >> 14)
 	ld (hl),l
 	call FlashCommand_ClearStatus
 	call FlashCommand_ReadStatus
-	bit 0,a
-	jp nz,ASCII16XMapper_Reset  ; bad
-	ld c,0
+	and 01H
+	ld a,2
+	ret nz
 	ld a,0FFH
 	ld (4000H + (5554ABH & 3FFFH)),a
 	ld a,00H
 	ld (8000H + (2AAB54H & 3FFFH)),a
 	call FlashCommand_ReadStatus
-	bit 0,a
-	jp z,ASCII16XMapper_Reset  ; bad
-	ld c,1
-	jp ASCII16XMapper_Reset
+	and 01H
+	ret
+	ENDP
 
 ; Modifies: a
 FlashCommand_Reset:

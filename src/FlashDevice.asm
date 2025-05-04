@@ -75,7 +75,7 @@ FlashDevice_ConstructContinuity:
 	call FlashDevice_SupportsContinuity
 	ret nz
 	call FlashCommand_CheckContinuity
-	ld (ix + FlashDevice.continuity),c
+	ld (ix + FlashDevice.continuity),a
 	ret
 
 ; ix = this
