@@ -41,8 +41,8 @@ Application_Construct: PROC
 	ld d,ixh
 	ld hl,Application.cli.slots
 	add hl,de
+	ld de,ConstructFlashDevice
 	call Application_CreateFlashIterator
-	ld iy,ConstructFlashDevice
 	call ArrayIterator_ForEach
 	pop ix
 	ret
@@ -81,24 +81,23 @@ Application_GetFlashDevices:
 	add ix,de
 	ret
 
+; de = function
 ; ix = this
 ; ix <- flash iterator
 Application_CreateFlashIterator:
 	push af
 	push bc
-	push de
 	push hl
 	ld a,(ix + Application.cli.slotCount)
-	ld bc,FlashDevice._size
-	ld e,ixl
-	ld d,ixh
+	ld c,ixl
+	ld b,ixh
 	ld hl,Application.flashDevices
-	add hl,de
-	ld de,Application.flashIterator
-	add ix,de
+	add hl,bc
+	ld ix,Application.flashIterator
+	add ix,bc
+	ld bc,FlashDevice._size
 	call ArrayIterator_Construct
 	pop hl
-	pop de
 	pop bc
 	pop af
 	ret
@@ -129,8 +128,8 @@ Application_PrintInfo: PROC
 	ld a,(ix + Application.cli.flags)
 	and 1 << CLI_FLAG_INFO
 	push ix
+	ld de,Print
 	call Application_CreateFlashIterator
-	ld iy,Print
 	call ArrayIterator_ForEach
 	pop ix
 	ret
@@ -151,8 +150,8 @@ Application_Erase: PROC
 	call System_PrintLn
 	call Application_CheckProgrammable
 	push ix
+	ld de,ChipErase
 	call Application_CreateFlashIterator
-	ld iy,ChipErase
 	call ArrayIterator_ForEach
 	pop ix
 	ret
@@ -174,6 +173,7 @@ Application_Program: PROC
 	call DOS_OpenFileHandle
 	call DOS_TerminateIfError
 	push ix
+	ld de,ProgramBlock
 	call Application_CreateFlashIterator
 	ld de,0000H
 	call Loop
@@ -202,7 +202,6 @@ Loop:
 	ld c,l
 	ld b,h
 	ld hl,Application_buffer
-	ld iy,ProgramBlock
 	call ArrayIterator_ForEach
 	pop ix
 	pop de
@@ -237,6 +236,7 @@ Application_Verify: PROC
 	call DOS_OpenFileHandle
 	call DOS_TerminateIfError
 	push ix
+	ld de,VerifyBlock
 	call Application_CreateFlashIterator
 	ld de,0000H
 	call Loop
@@ -270,7 +270,6 @@ Loop:
 	ld c,l
 	ld b,h
 	ld hl,Application_buffer
-	ld iy,VerifyBlock
 	call ArrayIterator_ForEach
 	pop ix
 	pop de
@@ -347,8 +346,8 @@ Loop:
 ; ix = this
 Application_CheckProgrammable: PROC
 	push ix
+	ld de,IsProgrammable
 	call Application_CreateFlashIterator
-	ld iy,IsProgrammable
 	call ArrayIterator_ForEach
 	ld hl,Application_errorFlash
 	call nz,System_ThrowExceptionWithMessage
@@ -370,6 +369,7 @@ Application_CheckCapacity: PROC
 	push de
 	push ix
 	push de
+	ld de,CheckCapacity
 	call Application_CreateFlashIterator
 	ex (sp),ix
 	ld l,(ix + FileInfoBlock.fileSize + 0)
@@ -394,7 +394,6 @@ Check:
 	call nc,Sla_DEHL
 	call nc,Sla_DEHL
 	call nc,Sla_DEHL
-	ld iy,CheckCapacity
 	call nc,ArrayIterator_ForEach
 	ret
 Dec_DEHL:

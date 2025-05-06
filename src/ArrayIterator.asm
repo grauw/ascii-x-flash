@@ -7,25 +7,31 @@ ArrayIterator: MACRO ?capacity
 	ForEach:
 		REPT ?capacity
 		ld ix,0
-		call System_JumpIY
+		call System_ThrowException
 		ENDM
 		ret
 	ENDM
 
 ; a = count
 ; bc = size
+; de = function
 ; hl = address
 ; ix = this
+; Modifies: af
 ArrayIterator_Construct: PROC
 	push ix
-	ld de,7  ; ForEach REPT block size
 Loop:
 	ld (ix + ArrayIterator.ForEach + 0),0DDH  ; ld ix,nn
 	ld (ix + ArrayIterator.ForEach + 1),021H
 	ld (ix + ArrayIterator.ForEach + 2),l
 	ld (ix + ArrayIterator.ForEach + 3),h
+	ld (ix + ArrayIterator.ForEach + 4),0CDH  ; call nn
+	ld (ix + ArrayIterator.ForEach + 5),e
+	ld (ix + ArrayIterator.ForEach + 6),d
+	REPT 7  ; ForEach REPT block size
+	inc ix
+	ENDM
 	add hl,bc
-	add ix,de
 	dec a
 	jr nz,Loop
 	ld (ix + ArrayIterator.ForEach + 0),0C9H  ; ret
@@ -34,7 +40,6 @@ Loop:
 	ENDP
 
 ; ix = this
-; iy = function
 ; ix <- last element
 ArrayIterator_ForEach: PROC
 	jp ix
