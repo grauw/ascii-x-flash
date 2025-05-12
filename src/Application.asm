@@ -22,6 +22,8 @@ Application: MACRO
 
 ; ix = this
 Application_Construct: PROC
+	ld hl,Application_messageWelcome
+	call System_Print
 	ld h,40H
 	call Memory_GetSlot
 	ld (ix + Application.slotRestore1.id),a
@@ -462,6 +464,8 @@ Application_CreateFile:
 	ret
 
 ;
+Application_messageWelcome:
+	db "ASCII-X flash tool v1.1 by Grauw",13,10,10,0
 Application_errorFlash:
 	db "FlashROM error.",13,10,0
 Application_warningCapacity:
