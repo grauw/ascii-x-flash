@@ -7,6 +7,7 @@ Copyright 2024 Laurens Holst
   * Author: Laurens Holst <laurens@grauw.nl>
   * Site: <https://www.grauw.nl/projects/ascii-x-flash/>
   * Source: <https://hg.sr.ht/~grauw/ascii-x-flash>
+  * Support: <https://www.msx.org/forum/msx-talk/development/ascii-x-flashrom-cartridge>
   * License: MIT
 
 Flash tool for ASCII-X FlashROM cartridges.
