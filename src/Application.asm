@@ -384,10 +384,13 @@ Application_Dump: PROC
 	call System_PrintLn
 	call Application_InitAddress
 	ret c
+	push hl
 	call Application_CreateFile
 	ld a,2
 	call DOS_OpenFileHandle
 	call DOS_TerminateIfError
+	pop de
+	call Application_PreAllocateSize
 	ld de,ReadBlock
 	call Application_CreateFlashIterator
 	call Loop
@@ -552,6 +555,46 @@ Application_SetFileStart:
 	ld h,(ix + Application.cli.fileStart + 1)
 	ld e,(ix + Application.cli.fileStart + 2)
 	ld d,(ix + Application.cli.fileStart + 3)
+	ld a,0
+	push bc
+	call DOS_MoveFileHandlePointer
+	call DOS_TerminateIfError
+	pop bc
+	ret
+
+; b = file handle
+; de = size / 1000H
+; b <- file handle
+Application_PreAllocateSize:
+	ld a,e
+	or d
+	ret z
+	dec de
+	ld l,0FFH
+	ld h,e
+	ld e,d
+	ld d,0
+	REPT 4
+	scf
+	adc hl,hl
+	rl e
+	rl d
+	ENDM
+	ld a,0
+	push bc
+	call DOS_MoveFileHandlePointer
+	call DOS_TerminateIfError
+	pop bc
+	ld a,0FFH
+	ld (Application_buffer),a
+	ld de,Application_buffer
+	ld hl,1
+	push bc
+	call DOS_WriteToFileHandle
+	call DOS_TerminateIfError
+	pop bc
+	ld hl,0
+	ld de,0
 	ld a,0
 	push bc
 	call DOS_MoveFileHandlePointer
