@@ -59,6 +59,29 @@ CLI_GetPath_DE:
 	ld d,(ix + CLI.path + 1)
 	ret
 
+; c = slot ID
+; ix = this
+CLI_AddSlot: PROC
+	ld b,Application_MAX_SLOTS
+	push ix
+Loop:
+	ld a,(ix + CLI.slots.0.slot.id)
+	cp c
+	ld hl,CLI_errorSameSlot
+	call z,System_ThrowExceptionWithMessage
+	cp Slot_NONE
+	jr z,Set
+	inc ix
+	djnz Loop
+	ld hl,CLI_errorTooManySlots
+	call System_ThrowExceptionWithMessage
+Set:
+	ld (ix + CLI.slots.0.slot.id),c
+	pop ix
+	inc (ix + CLI.slotCount)
+	ret
+	ENDP
+
 ; ix = this
 CLI_Parse: PROC
 	call CLI_GetBuffer_DE
@@ -127,28 +150,10 @@ CLI_ParseOption: PROC
 	jr z,OptionInfo
 	ld hl,CLI_errorUnknownOption
 	call System_ThrowExceptionWithMessage
-OptionSlot: PROC
+OptionSlot:
 	inc de
 	call CLI_ParseSlot
-	ld b,Application_MAX_SLOTS
-	push ix
-Loop:
-	ld a,(ix + CLI.slots.0.slot.id)
-	cp c
-	ld hl,CLI_errorSameSlot
-	call z,System_ThrowExceptionWithMessage
-	cp Slot_NONE
-	jr z,Set
-	inc ix
-	djnz Loop
-	ld hl,CLI_errorTooManySlots
-	call System_ThrowExceptionWithMessage
-Set:
-	ld (ix + CLI.slots.0.slot.id),c
-	pop ix
-	inc (ix + CLI.slotCount)
-	jr Next
-	ENDP
+	jp CLI_AddSlot
 OptionErase:
 	ld (ix + CLI.erase),-1
 	inc de
