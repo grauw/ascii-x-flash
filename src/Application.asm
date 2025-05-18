@@ -310,39 +310,62 @@ Application_Dump: PROC
 	ld a,2
 	call DOS_OpenFileHandle
 	call DOS_TerminateIfError
-	push ix
-	call Application_GetFlashDevices
+	ld de,ReadBlock
+	call Application_CreateFlashIterator
 	ld de,0000H
 	call Loop
-	pop ix
 	call DOS_CloseFileHandle
 	call DOS_TerminateIfError
 	call System_PrintCrLf
 	ret
 ; b = file handle
 ; de = physical address / 1000H
-; ix = flash device
+; ix = this
+; iy = flash iterator
 Loop:
 	push bc
 	push de
 	push bc
+	push ix
 	ex de,hl
 	ld bc,FlashDevice_BLOCK_SIZE
 	ld de,Application_buffer
-	di
-	call FlashDevice_ReadBlock
-	ei
+	call ArrayIterator_ForEach
+	pop ix
 	pop bc
+	jr c,Done
 	ld de,Application_buffer
 	ld hl,FlashDevice_BLOCK_SIZE
 	call DOS_WriteToFileHandle
+	call DOS_TerminateIfError
+	and a
+Done:
 	pop de
 	pop bc
-	call DOS_TerminateIfError
 	inc de
+	push af
 	call Application_PrintProgress
-	call FlashDevice_CheckCapacity
+	pop af
 	jr nc,Loop
+	ret
+; hl = source / 1000H
+; de = destination
+; bc = byte count (<= 1000H)
+; ix = flash device
+; f <- c: out of range
+ReadBlock:
+	ex de,hl
+	call FlashDevice_CheckCapacity
+	ex de,hl
+	ret c
+	push bc
+	push de
+	push hl
+	call FlashDevice_ReadBlock
+	pop hl
+	pop de
+	pop bc
+	and a
 	ret
 	ENDP
 
