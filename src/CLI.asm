@@ -179,43 +179,6 @@ Next:
 
 ; de = buffer position
 ; ix = this
-; c <- value
-; de <- buffer position after number
-CLI_ParseNumber: PROC
-	ld c,0
-	ld hl,CLI_errorUnknownOption
-Loop:
-	ld a,(de)
-	cp " " + 1
-	ret c
-	sub "0"
-	call c,System_ThrowExceptionWithMessage
-	cp 10
-	call nc,System_ThrowExceptionWithMessage
-	call Multiply10AndAdd
-	inc de
-	jr Loop
-Multiply10AndAdd:
-	ld b,a
-	ld a,c
-	ld c,b
-	add a,a
-	call c,System_ThrowExceptionWithMessage
-	ld b,a
-	add a,a
-	call c,System_ThrowExceptionWithMessage
-	add a,a
-	call c,System_ThrowExceptionWithMessage
-	add a,b
-	call c,System_ThrowExceptionWithMessage
-	add a,c
-	call c,System_ThrowExceptionWithMessage
-	ld c,a
-	ret
-	ENDP
-
-; de = buffer position
-; ix = this
 ; c <- slot ID
 ; de <- buffer position after slot ID
 CLI_ParseSlot:
