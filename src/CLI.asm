@@ -158,8 +158,7 @@ CLI_ParseOption: PROC
 	jr z,OptionDump
 	cp "I"
 	jr z,OptionInfo
-	ld hl,CLI_errorUnknownOption
-	call System_ThrowExceptionWithMessage
+	jp CLI_ThrowUnknownOption
 OptionSlot:
 	call CLI_ParseSlot
 	jp CLI_AddSlot
@@ -187,8 +186,7 @@ CLI_ParseNoParameter:
 	ld a,(iy)
 	cp " " + 1
 	ret c
-	ld hl,CLI_errorUnknownOption
-	call System_ThrowExceptionWithMessage
+	jp CLI_ThrowUnknownOption
 
 ; ix = this
 ; iy = buffer position
@@ -196,26 +194,25 @@ CLI_ParseNoParameter:
 ; iy <- buffer position after slot ID
 CLI_ParseSlot:
 	ld c,0
-	ld hl,CLI_errorParameter
 	ld a,(iy)
 	inc iy
 	sub "0"
-	call c,System_ThrowExceptionWithMessage
+	call c,CLI_ThrowParameter
 	cp 4
-	call nc,System_ThrowExceptionWithMessage
+	call nc,CLI_ThrowParameter
 	ld c,a
 	ld a,(iy)
 	cp " " + 1
 	ret c
 	inc iy
 	cp "-"
-	call nz,System_ThrowExceptionWithMessage
+	call nz,CLI_ThrowParameter
 	ld a,(iy)
 	inc iy
 	sub "0"
-	call c,System_ThrowExceptionWithMessage
+	call c,CLI_ThrowParameter
 	cp 4
-	call nc,System_ThrowExceptionWithMessage
+	call nc,CLI_ThrowParameter
 	add a,a
 	add a,a
 	or 80H
@@ -223,7 +220,7 @@ CLI_ParseSlot:
 	ld c,a
 	ld a,(iy)
 	cp " " + 1
-	call nc,System_ThrowExceptionWithMessage
+	call nc,CLI_ThrowParameter
 	ret
 
 ; ix = this
@@ -269,6 +266,14 @@ Dump:
 	call nc,System_ThrowExceptionWithMessage
 	ret
 	ENDP
+
+CLI_ThrowUnknownOption:
+	ld hl,CLI_errorUnknownOption
+	jp System_ThrowExceptionWithMessage
+
+CLI_ThrowParameter:
+	ld hl,CLI_errorParameter
+	jp System_ThrowExceptionWithMessage
 
 ;
 CLI_parametersEnvName:
