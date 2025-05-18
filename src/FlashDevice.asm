@@ -28,13 +28,8 @@ FlashDevice_Construct:
 	call SlotDevice_Select
 	call FlashDevice_ConstructCFIQuery
 	call FlashDevice_ConstructManufacturerDeviceID
-	call FlashDevice_CheckContinuity
-	push ix
-	call FlashDevice_GetCFIQuery
-	call CFIQuery_GetCapacity
-	pop ix
-	ld (ix + FlashDevice.capacity + 0),l
-	ld (ix + FlashDevice.capacity + 1),h
+	call FlashDevice_ConstructContinuity
+	call FlashDevice_ConstructCapacity
 	ret
 
 ; ix = this
@@ -66,6 +61,25 @@ FlashDevice_ConstructManufacturerDeviceID:
 	ld a,(4000H + 1EH)
 	ld (ix + FlashDevice.deviceID + 2),a
 	jp FlashCommand_Reset
+
+; ix = this
+FlashDevice_ConstructContinuity:
+	ld (ix + FlashDevice.continuity),1
+	call FlashDevice_SupportsContinuity
+	ret nz
+	call FlashCommand_CheckContinuity
+	ld (ix + FlashDevice.continuity),c
+	ret
+
+; ix = this
+FlashDevice_ConstructCapacity:
+	push ix
+	call FlashDevice_GetCFIQuery
+	call CFIQuery_GetCapacity
+	pop ix
+	ld (ix + FlashDevice.capacity + 0),l
+	ld (ix + FlashDevice.capacity + 1),h
+	ret
 
 ; ix = this
 ; ix <- CFIQuery
@@ -208,15 +222,6 @@ Check01:
 	cp 01H
 	ret
 	ENDP
-
-; ix = this
-FlashDevice_CheckContinuity:
-	ld (ix + FlashDevice.continuity),1
-	call FlashDevice_SupportsContinuity
-	ret nz
-	call FlashCommand_CheckContinuity
-	ld (ix + FlashDevice.continuity),c
-	ret
 
 ; ix = this
 FlashDevice_PrintContinuity:
