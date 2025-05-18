@@ -92,13 +92,13 @@ CLI_Parse: PROC
 	call CLI_GetBuffer_DE
 Loop:
 	ld a,(de)
+	inc de
 	and a
 	ret z
 	cp "/"
 	jr z,Option
 	cp " " + 1
 	jr nc,Path
-	inc de
 	jr Loop
 Option:
 	ld (ix + CLI.usage),0
@@ -106,6 +106,7 @@ Option:
 	jr Loop
 Path:
 	ld (ix + CLI.usage),0
+	dec de
 	call CLI_ParsePath
 	jr Loop
 	ENDP
@@ -138,8 +139,8 @@ Loop:
 ; ix = this
 ; de <- buffer position after option
 CLI_ParseOption: PROC
-	inc de
 	ld a,(de)
+	inc de
 	and 11011111B  ; upper-case
 	cp "S"
 	jr z,OptionSlot
@@ -156,28 +157,22 @@ CLI_ParseOption: PROC
 	ld hl,CLI_errorUnknownOption
 	call System_ThrowExceptionWithMessage
 OptionSlot:
-	inc de
 	call CLI_ParseSlot
 	jp CLI_AddSlot
 OptionErase:
 	ld (ix + CLI.erase),-1
-	inc de
 	jp CLI_ParseNoParameter
 OptionProgram:
 	ld (ix + CLI.program),-1
-	inc de
 	jp CLI_ParseNoParameter
 OptionVerify:
 	ld (ix + CLI.verify),-1
-	inc de
 	jp CLI_ParseNoParameter
 OptionDump:
 	ld (ix + CLI.dump),-1
-	inc de
 	jp CLI_ParseNoParameter
 OptionInfo:
 	ld (ix + CLI.info),-1
-	inc de
 	jp CLI_ParseNoParameter
 	ENDP
 
@@ -199,19 +194,20 @@ CLI_ParseSlot:
 	ld c,0
 	ld hl,CLI_errorParameter
 	ld a,(de)
+	inc de
 	sub "0"
 	call c,System_ThrowExceptionWithMessage
 	cp 4
 	call nc,System_ThrowExceptionWithMessage
 	ld c,a
-	inc de
 	ld a,(de)
 	cp " " + 1
 	ret c
+	inc de
 	cp "-"
 	call nz,System_ThrowExceptionWithMessage
-	inc de
 	ld a,(de)
+	inc de
 	sub "0"
 	call c,System_ThrowExceptionWithMessage
 	cp 4
@@ -221,7 +217,6 @@ CLI_ParseSlot:
 	or 80H
 	or c
 	ld c,a
-	inc de
 	ld a,(de)
 	cp " " + 1
 	call nc,System_ThrowExceptionWithMessage
