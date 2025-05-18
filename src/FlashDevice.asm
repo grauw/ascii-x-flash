@@ -263,6 +263,19 @@ FlashDevice_ChipErase:
 	ei
 	ret
 
+; de = destination / 1000H
+; ix = this
+FlashDevice_SectorErase:
+	call FlashDevice_CheckCapacity
+	ret c
+	call SlotDevice_Select
+	ex de,hl
+	call ASCII16XMapper_SelectAddress
+	di
+	call FlashCommand_SectorErase
+	ei
+	ret
+
 ; hl = source
 ; de = destination / 1000H
 ; bc = byte count (<= 1000H)

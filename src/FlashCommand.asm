@@ -130,6 +130,19 @@ FlashCommand_ChipErase:
 	ret
 
 ; hl = destination
+FlashCommand_SectorErase:
+	exx
+	FlashCommand_LoadUnlock_M
+	FlashCommand_Unlock_M
+	ld (hl),080H
+	FlashCommand_Unlock_M
+	exx
+	ld (hl),030H
+	ld a,0FFH
+	call FlashCommand_CheckWait
+	ret
+
+; hl = destination
 ; de = source
 ; bc = byte count
 FlashCommand_ProgramByteBlock: PROC

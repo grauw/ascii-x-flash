@@ -226,9 +226,15 @@ Print:
 	ENDP
 
 ; ix = this
-Application_Erase: PROC
+Application_Erase:
 	bit CLI_FLAG_ERASE,(ix + Application.cli.flags)
 	ret z
+	bit CLI_FLAG_CHIP,(ix + Application.cli.flags)
+	jr z,Application_EraseSector
+	jr Application_EraseChip
+
+; ix = this
+Application_EraseChip: PROC
 	ld hl,Application_messageErasingChip
 	call System_PrintLn
 	call Application_CheckProgrammable
@@ -241,6 +247,62 @@ Application_Erase: PROC
 ; ix = flash device
 ChipErase:
 	equ FlashDevice_ChipErase
+	ENDP
+
+; ix = this
+Application_EraseSector: PROC
+	ld hl,Application_messageErasing
+	call System_PrintLn
+	call Application_CheckProgrammable
+	call Application_InitAddress
+	ret c
+	ld e,(ix + Application.addressStart + 0)
+	ld d,(ix + Application.addressStart + 1)
+	call Application_IsSectorAligned
+	ld hl,Application_warningEraseAlignment
+	call nz,System_PrintLn
+	jr nz,SkipEndCheck
+	ld e,(ix + Application.addressEnd + 0)
+	ld d,(ix + Application.addressEnd + 1)
+	call Application_IsSectorAligned
+	ld hl,Application_warningEraseAlignment
+	call nz,System_PrintLn
+SkipEndCheck:
+	ld de,SectorErase
+	call Application_CreateFlashIterator
+	call Loop
+	call System_PrintCrLf
+	ret
+; ix = flash iterator
+Loop:
+	push ix
+	ld l,(ix + Application.addressStart + 0)
+	ld h,(ix + Application.addressStart + 1)
+	ld e,(ix + Application.addressCurrent + 0)
+	ld d,(ix + Application.addressCurrent + 1)
+	call ArrayIterator_ForEach
+	pop ix
+	call Application_NextAddress
+	jr nc,Loop
+	ret
+; hl = start address / 1000H
+; de = physical address / 1000H
+; ix = flash device
+SectorErase:
+	push de
+	push hl
+	push ix
+	push de
+	call FlashDevice_GetCFIQuery
+	pop de
+	and a
+	sbc hl,de
+	call nz,CFIQuery_IsSectorAligned
+	pop ix
+	call z,FlashDevice_SectorErase
+	pop hl
+	pop de
+	ret
 	ENDP
 
 ; ix = this
@@ -481,6 +543,42 @@ GetMaxCapacity:
 
 ; de = physical address / 1000H
 ; ix = this
+; f <- z: aligned, nz: not aligned
+; de <- physical address / 1000H
+Application_IsSectorAligned: PROC
+	push de
+	ld de,IsSectorAligned
+	call Application_CreateFlashIterator
+	pop de
+	push ix
+	call ArrayIterator_ForEach
+	pop ix
+	ret
+; de = physical address / 1000H
+; ix = flash device
+; f <- z: aligned or above capacity, nz: not aligned
+; de <- physical address / 1000H
+IsSectorAligned:
+	ld l,(ix + FlashDevice.capacity + 0)
+	ld h,(ix + FlashDevice.capacity + 1)
+	scf
+	sbc hl,de
+	jr c,AboveCapacity
+	push ix
+	push de
+	call FlashDevice_GetCFIQuery
+	pop de
+	call CFIQuery_IsSectorAligned
+	pop ix
+	ret z
+	jp ArrayIterator_ForEach.Break
+AboveCapacity:
+	xor a
+	ret
+	ENDP
+
+; de = physical address / 1000H
+; ix = this
 ; f <- c: exceeds capacity
 ; de <- physical address / 1000H
 ; Modifies: a
@@ -681,8 +779,12 @@ Application_errorFlash:
 	db "FlashROM error.",0
 Application_warningCapacity:
 	db "File exceeds capacity, truncating.",0
+Application_messageErasing:
+	db "Erasing...",0
 Application_messageErasingChip:
 	db "Erasing chip...",0
+Application_warningEraseAlignment:
+	db "Address not sector aligned, erasing full sector.",0
 Application_messageProgramming:
 	db "Programming...",0
 Application_messageVerifying:

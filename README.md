@@ -50,6 +50,7 @@ Advanced options:
   * `/s`  Slot number (required). Format: p or p-s.
           Specify up to 8 for bulk flashing.
   * `/e`  Erase flash ROM.
+  * `/ec` Erase flash ROM (chip erase).
   * `/p`  Program flash ROM from file. Erase first.
   * `/p!` Program flash ROM from file. No erase.
   * `/v`  Verify flash ROM with file.

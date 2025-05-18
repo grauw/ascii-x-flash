@@ -4,10 +4,11 @@
 CLI_BUFFER_SIZE: equ 255
 CLI_FLAG_HELP: equ 0
 CLI_FLAG_ERASE: equ 1
-CLI_FLAG_PROGRAM: equ 2
-CLI_FLAG_VERIFY: equ 3
-CLI_FLAG_DUMP: equ 4
-CLI_FLAG_INFO: equ 5
+CLI_FLAG_CHIP: equ 2
+CLI_FLAG_PROGRAM: equ 3
+CLI_FLAG_VERIFY: equ 4
+CLI_FLAG_DUMP: equ 5
+CLI_FLAG_INFO: equ 6
 
 CLI: MACRO
 	flags:
@@ -180,6 +181,12 @@ OptionSlot:
 	jp CLI_AddSlot
 OptionErase:
 	set CLI_FLAG_ERASE,(ix + CLI.flags)
+	ld a,(iy)
+	and 11011111B  ; upper-case
+	cp "C"
+	jp nz,CLI_ParseNoParameter
+	inc iy
+	set CLI_FLAG_CHIP,(ix + CLI.flags)
 	jp CLI_ParseNoParameter
 OptionProgram:
 	set CLI_FLAG_PROGRAM,(ix + CLI.flags)
@@ -468,6 +475,7 @@ CLI_messageAdvancedHelp:
 	db "  /s  Slot number (required). Format: p or p-s.",13,10
 	db "      Specify up to 8 for bulk flashing.",13,10
 	db "  /e  Erase flash ROM.",13,10
+	db "  /ec Erase flash ROM (chip erase).",13,10
 	db "  /p  Program flash ROM from file. Erase first.",13,10
 	db "  /p! Program flash ROM from file. No erase.",13,10
 	db "  /v  Verify flash ROM with file.",13,10

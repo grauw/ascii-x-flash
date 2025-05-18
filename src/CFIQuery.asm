@@ -152,6 +152,48 @@ Loop:
 	ret
 	ENDP
 
+; de = physical address / 1000H
+; ix = this
+; f <- z: aligned, nz: not aligned
+; de <- physical address / 1000H
+CFIQuery_IsSectorAligned: PROC
+	ld a,e
+	or d
+	ret z
+	ld a,(ix + CFIQuery.regionCount)
+	push de
+	ex de,hl
+	call RegionLoop
+	pop de
+	ret
+RegionLoop:
+	ld c,(ix + CFIQuery.region1SectorCount + 0)
+	ld b,(ix + CFIQuery.region1SectorCount + 1)
+	ld e,(ix + CFIQuery.region1SectorSize + 0)
+	ld d,(ix + CFIQuery.region1SectorSize + 1)
+	REPT 4
+	srl d
+	rr e
+	call c,System_ThrowException
+	ENDM
+	and a
+Loop:
+	sbc hl,de
+	ret z
+	ret c
+	dec bc
+	bit 7,b
+	jr z,Loop
+	inc ix
+	inc ix
+	inc ix
+	inc ix
+	dec a
+	jr nz,RegionLoop
+	dec a
+	ret
+	ENDP
+
 ; ix = this
 CFIQuery_Print:
 	ld hl,CFIQuery_message
