@@ -16,35 +16,35 @@ ArrayIterator: MACRO ?capacity
 ; bc = size
 ; de = function
 ; hl = address
-; ix = this
+; iy = this
 ; Modifies: af
 ArrayIterator_Construct: PROC
-	push ix
+	push iy
 Loop:
-	ld (ix + ArrayIterator.ForEach + 0),0DDH  ; ld ix,nn
-	ld (ix + ArrayIterator.ForEach + 1),021H
-	ld (ix + ArrayIterator.ForEach + 2),l
-	ld (ix + ArrayIterator.ForEach + 3),h
-	ld (ix + ArrayIterator.ForEach + 4),0CDH  ; call nn
-	ld (ix + ArrayIterator.ForEach + 5),e
-	ld (ix + ArrayIterator.ForEach + 6),d
+	ld (iy + ArrayIterator.ForEach + 0),0DDH  ; ld ix,nn
+	ld (iy + ArrayIterator.ForEach + 1),021H
+	ld (iy + ArrayIterator.ForEach + 2),l
+	ld (iy + ArrayIterator.ForEach + 3),h
+	ld (iy + ArrayIterator.ForEach + 4),0CDH  ; call nn
+	ld (iy + ArrayIterator.ForEach + 5),e
+	ld (iy + ArrayIterator.ForEach + 6),d
 	REPT 7  ; ForEach REPT block size
-	inc ix
+	inc iy
 	ENDM
 	add hl,bc
 	dec a
 	jr nz,Loop
-	ld (ix + ArrayIterator.ForEach + 0),0C9H  ; ret
-	pop ix
+	ld (iy + ArrayIterator.ForEach + 0),0C9H  ; ret
+	pop iy
 	ret
 	ENDP
 
-; ix = this
+; iy = this
 ; ix <- last element
 ArrayIterator_ForEach: PROC
-	jp ix
+	jp iy
 Break:
-	ex (sp),ix
-	pop ix
+	ex (sp),iy
+	pop iy
 	ret
 	ENDP

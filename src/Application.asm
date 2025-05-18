@@ -36,13 +36,13 @@ Application_Construct: PROC
 	call Application_GetCLI
 	call CLI_Construct
 	pop ix
-	push ix
 	ld e,ixl
 	ld d,ixh
 	ld hl,Application.cli.slots
 	add hl,de
 	ld de,ConstructFlashDevice
 	call Application_CreateFlashIterator
+	push ix
 	call ArrayIterator_ForEach
 	pop ix
 	ret
@@ -83,7 +83,7 @@ Application_GetFlashDevices:
 
 ; de = function
 ; ix = this
-; ix <- flash iterator
+; iy <- flash iterator
 Application_CreateFlashIterator:
 	push af
 	push bc
@@ -93,8 +93,8 @@ Application_CreateFlashIterator:
 	ld b,ixh
 	ld hl,Application.flashDevices
 	add hl,bc
-	ld ix,Application.flashIterator
-	add ix,bc
+	ld iy,Application.flashIterator
+	add iy,bc
 	ld bc,FlashDevice._size
 	call ArrayIterator_Construct
 	pop hl
@@ -127,9 +127,9 @@ Application_Test:
 Application_PrintInfo: PROC
 	ld a,(ix + Application.cli.flags)
 	and 1 << CLI_FLAG_INFO
-	push ix
 	ld de,Print
 	call Application_CreateFlashIterator
+	push ix
 	call ArrayIterator_ForEach
 	pop ix
 	ret
@@ -149,9 +149,9 @@ Application_Erase: PROC
 	ld hl,Application_messageErasingChip
 	call System_PrintLn
 	call Application_CheckProgrammable
-	push ix
 	ld de,ChipErase
 	call Application_CreateFlashIterator
+	push ix
 	call ArrayIterator_ForEach
 	pop ix
 	ret
@@ -172,19 +172,18 @@ Application_Program: PROC
 	ld a,1
 	call DOS_OpenFileHandle
 	call DOS_TerminateIfError
-	push ix
 	ld de,ProgramBlock
 	call Application_CreateFlashIterator
 	ld de,0000H
 	call Loop
-	pop ix
 	call DOS_CloseFileHandle
 	call DOS_TerminateIfError
 	call System_PrintCrLf
 	ret
 ; b = file handle
 ; de = physical address / 1000H
-; ix = flash iterator
+; ix = this
+; iy = flash iterator
 Loop:
 	push bc
 	push de
@@ -235,12 +234,10 @@ Application_Verify: PROC
 	ld a,1
 	call DOS_OpenFileHandle
 	call DOS_TerminateIfError
-	push ix
 	ld de,VerifyBlock
 	call Application_CreateFlashIterator
 	ld de,0000H
 	call Loop
-	pop ix
 	push af
 	call DOS_CloseFileHandle
 	call DOS_TerminateIfError
@@ -252,7 +249,8 @@ Application_Verify: PROC
 	jp System_PrintLn
 ; b = file handle
 ; de = physical address / 1000H
-; ix = flash iterator
+; ix = this
+; iy = flash iterator
 Loop:
 	push bc
 	push de
@@ -345,9 +343,9 @@ Loop:
 
 ; ix = this
 Application_CheckProgrammable: PROC
-	push ix
 	ld de,IsProgrammable
 	call Application_CreateFlashIterator
+	push ix
 	call ArrayIterator_ForEach
 	ld hl,Application_errorFlash
 	call nz,System_ThrowExceptionWithMessage
@@ -367,8 +365,6 @@ IsProgrammable:
 ; de <- file info block
 Application_CheckCapacity: PROC
 	push de
-	push ix
-	push de
 	ld de,CheckCapacity
 	call Application_CreateFlashIterator
 	ex (sp),ix
@@ -376,7 +372,8 @@ Application_CheckCapacity: PROC
 	ld h,(ix + FileInfoBlock.fileSize + 1)
 	ld e,(ix + FileInfoBlock.fileSize + 2)
 	ld d,(ix + FileInfoBlock.fileSize + 3)
-	pop ix
+	ex (sp),ix
+	push ix
 	call Check
 	ld hl,Application_warningCapacity
 	call c,System_PrintLn
