@@ -84,6 +84,31 @@ Path:
 
 ; de = buffer position
 ; ix = this
+; de <- buffer position after path
+CLI_ParsePath: PROC
+	ld a,(ix + CLI.path)
+	or (ix + CLI.path + 1)
+	ld hl,CLI_errorMultiplePaths
+	call nz,System_ThrowExceptionWithMessage
+	ld (ix + CLI.path),e
+	ld (ix + CLI.path + 1),d
+Loop:
+	ld a,(de)
+	inc de
+	cp " " + 1
+	jr nc,Loop
+	dec de
+	and a
+	ret z
+	xor a
+	ld (de),a
+	inc de
+	ret
+	ENDP
+
+; de = buffer position
+; ix = this
+; de <- buffer position after option
 CLI_ParseOption: PROC
 	inc de
 	ld a,(de)
@@ -150,74 +175,6 @@ Next:
 	ret c
 	ld hl,CLI_errorUnknownOption
 	call System_ThrowExceptionWithMessage
-	ENDP
-
-; de = buffer position
-; de <- buffer position after path
-; ix = this
-CLI_ParsePath: PROC
-	ld a,(ix + CLI.path)
-	or (ix + CLI.path + 1)
-	ld hl,CLI_errorMultiplePaths
-	call nz,System_ThrowExceptionWithMessage
-	ld (ix + CLI.path),e
-	ld (ix + CLI.path + 1),d
-Loop:
-	ld a,(de)
-	inc de
-	cp " " + 1
-	jr nc,Loop
-	dec de
-	and a
-	ret z
-	xor a
-	ld (de),a
-	inc de
-	ret
-	ENDP
-
-; ix = this
-CLI_Verify: PROC
-	bit 0,(ix + CLI.usage)
-	ld hl,CLI_messageUsage
-	call nz,System_ThrowExceptionWithMessage
-	ld a,(ix + CLI.slotCount)
-	cp 1
-	ld hl,CLI_errorNoSlot
-	call c,System_ThrowExceptionWithMessage
-	bit 0,(ix + CLI.program)
-	jr nz,Program
-	bit 0,(ix + CLI.verify)
-	jr nz,Verify
-	bit 0,(ix + CLI.dump)
-	jr nz,Dump
-	ret
-Program:
-Verify:
-	ld a,(ix + CLI.path + 0)
-	or (ix + CLI.path + 1)
-	ld hl,CLI_errorNoFile
-	call z,System_ThrowExceptionWithMessage
-	bit 0,(ix + CLI.dump)
-	ld hl,CLI_errorDumpProgramVerify
-	call nz,System_ThrowExceptionWithMessage
-	ret
-Dump:
-	ld a,(ix + CLI.path + 0)
-	or (ix + CLI.path + 1)
-	ld hl,CLI_errorNoFile
-	call z,System_ThrowExceptionWithMessage
-	bit 0,(ix + CLI.program)
-	ld hl,CLI_errorDumpProgramVerify
-	call nz,System_ThrowExceptionWithMessage
-	bit 0,(ix + CLI.verify)
-	ld hl,CLI_errorDumpProgramVerify
-	call nz,System_ThrowExceptionWithMessage
-	ld a,(ix + CLI.slotCount)
-	cp 2
-	ld hl,CLI_errorTooManySlots
-	call nc,System_ThrowExceptionWithMessage
-	ret
 	ENDP
 
 ; de = buffer position
@@ -292,6 +249,50 @@ CLI_ParseSlot:
 	cp " " + 1
 	call nc,System_ThrowExceptionWithMessage
 	ret
+
+; ix = this
+CLI_Verify: PROC
+	bit 0,(ix + CLI.usage)
+	ld hl,CLI_messageUsage
+	call nz,System_ThrowExceptionWithMessage
+	ld a,(ix + CLI.slotCount)
+	cp 1
+	ld hl,CLI_errorNoSlot
+	call c,System_ThrowExceptionWithMessage
+	bit 0,(ix + CLI.program)
+	jr nz,Program
+	bit 0,(ix + CLI.verify)
+	jr nz,Verify
+	bit 0,(ix + CLI.dump)
+	jr nz,Dump
+	ret
+Program:
+Verify:
+	ld a,(ix + CLI.path + 0)
+	or (ix + CLI.path + 1)
+	ld hl,CLI_errorNoFile
+	call z,System_ThrowExceptionWithMessage
+	bit 0,(ix + CLI.dump)
+	ld hl,CLI_errorDumpProgramVerify
+	call nz,System_ThrowExceptionWithMessage
+	ret
+Dump:
+	ld a,(ix + CLI.path + 0)
+	or (ix + CLI.path + 1)
+	ld hl,CLI_errorNoFile
+	call z,System_ThrowExceptionWithMessage
+	bit 0,(ix + CLI.program)
+	ld hl,CLI_errorDumpProgramVerify
+	call nz,System_ThrowExceptionWithMessage
+	bit 0,(ix + CLI.verify)
+	ld hl,CLI_errorDumpProgramVerify
+	call nz,System_ThrowExceptionWithMessage
+	ld a,(ix + CLI.slotCount)
+	cp 2
+	ld hl,CLI_errorTooManySlots
+	call nc,System_ThrowExceptionWithMessage
+	ret
+	ENDP
 
 ;
 CLI_parametersEnvName:
