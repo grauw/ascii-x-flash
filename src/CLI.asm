@@ -77,6 +77,11 @@ Loop:
 	call System_ThrowExceptionWithMessage
 Set:
 	ld (ix + CLI.slots.0.slot.id),c
+	ld bc,CLI.slots
+	add ix,bc
+	call Slot_CheckExpanded
+	ld hl,CLI_errorSlotExpansion
+	call nz,System_ThrowExceptionWithMessage
 	pop ix
 	inc (ix + CLI.slotCount)
 	ret
@@ -273,6 +278,8 @@ CLI_errorMultiplePaths:
 	db "Can not specify more than one file path.",0
 CLI_errorDumpProgramVerify:
 	db "Can not combine dump with program or verify.",0
+CLI_errorSlotExpansion:
+	db "Specified slot expansion incorrect.",0
 CLI_errorSameSlot:
 	db "Same slot specified multiple times.",0
 CLI_errorTooManySlots:

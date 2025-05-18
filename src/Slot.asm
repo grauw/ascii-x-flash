@@ -25,3 +25,17 @@ Slot_Print:
 	add a,"0"
 	call System_PrintChar
 	ret
+
+; ix = this
+; f <- z: correct, nz: mismatch
+Slot_CheckExpanded:
+	ld a,(ix + Slot.id)
+	and 03H
+	ld c,a
+	ld b,0
+	ld hl,EXPTBL
+	add hl,bc
+	ld a,(hl)
+	xor (ix + Slot.id)
+	and 80H
+	ret
