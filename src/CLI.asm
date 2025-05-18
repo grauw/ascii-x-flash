@@ -162,30 +162,34 @@ OptionSlot:
 OptionErase:
 	ld (ix + CLI.erase),-1
 	inc de
-	jr Next
+	jp CLI_ParseNoParameter
 OptionProgram:
 	ld (ix + CLI.program),-1
 	inc de
-	jr Next
+	jp CLI_ParseNoParameter
 OptionVerify:
 	ld (ix + CLI.verify),-1
 	inc de
-	jr Next
+	jp CLI_ParseNoParameter
 OptionDump:
 	ld (ix + CLI.dump),-1
 	inc de
-	jr Next
+	jp CLI_ParseNoParameter
 OptionInfo:
 	ld (ix + CLI.info),-1
 	inc de
-	jr Next
-Next:
+	jp CLI_ParseNoParameter
+	ENDP
+
+; de = buffer position
+; ix = this
+; de <- buffer position after option
+CLI_ParseNoParameter:
 	ld a,(de)
 	cp " " + 1
 	ret c
 	ld hl,CLI_errorUnknownOption
 	call System_ThrowExceptionWithMessage
-	ENDP
 
 ; de = buffer position
 ; ix = this
