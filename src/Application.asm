@@ -8,6 +8,12 @@ Application: MACRO
 		Slot
 	slotRestore2:
 		Slot
+	addressStart:
+		dw 0
+	addressEnd:
+		dw 0
+	addressCurrent:
+		dw 0
 	cli:
 		CLI
 	fileInfoBlock:
@@ -37,6 +43,7 @@ Application_Construct:
 	call CLI_Construct
 	pop ix
 	call Application_ConstructFlashDevices
+	call Application_ConstructAddress
 	ret
 
 ; ix = this
@@ -61,6 +68,13 @@ ConstructFlashDevice:
 	inc hl
 	ret
 	ENDP
+
+; ix = this
+Application_ConstructAddress:
+	call Application_GetMaxCapacity
+	ld (ix + Application.addressEnd + 0),e
+	ld (ix + Application.addressEnd + 1),d
+	ret
 
 ; ix = this
 Application_Destruct:
@@ -105,6 +119,40 @@ Application_CreateFlashIterator:
 	pop hl
 	pop bc
 	pop af
+	ret
+
+; ix = this
+; f <- c: done (end before start)
+; de <- start address / 1000H
+; hl <- length / 1000H
+Application_InitAddress:
+	ld e,(ix + Application.addressStart + 0)
+	ld d,(ix + Application.addressStart + 1)
+	ld (ix + Application.addressCurrent + 0),e
+	ld (ix + Application.addressCurrent + 1),d
+	ld l,(ix + Application.addressEnd + 0)
+	ld h,(ix + Application.addressEnd + 1)
+	scf
+	sbc hl,de
+	inc hl
+	ret
+
+; ix = this
+; f <- c: done
+; de <- next address / 1000H
+; hl <- remaining / 1000H
+Application_NextAddress:
+	ld e,(ix + Application.addressCurrent + 0)
+	ld d,(ix + Application.addressCurrent + 1)
+	inc de
+	ld (ix + Application.addressCurrent + 0),e
+	ld (ix + Application.addressCurrent + 1),d
+	call Application_PrintProgress
+	ld l,(ix + Application.addressEnd + 0)
+	ld h,(ix + Application.addressEnd + 1)
+	scf
+	sbc hl,de
+	inc hl
 	ret
 
 ; ix = this
@@ -172,6 +220,8 @@ Application_Program: PROC
 	ld hl,Application_messageProgramming
 	call System_PrintLn
 	call Application_CheckProgrammable
+	call Application_InitAddress
+	ret c
 	call Application_FindFile
 	call Application_CheckCapacity
 	ld a,1
@@ -179,7 +229,6 @@ Application_Program: PROC
 	call DOS_TerminateIfError
 	ld de,ProgramBlock
 	call Application_CreateFlashIterator
-	ld de,0000H
 	call Loop
 	call DOS_CloseFileHandle
 	call DOS_TerminateIfError
@@ -191,28 +240,26 @@ Application_Program: PROC
 ; iy = flash iterator
 Loop:
 	push bc
-	push de
 	ld de,Application_buffer
 	ld hl,FlashDevice_BLOCK_SIZE
 	call DOS_ReadFromFileHandle
-	pop de
 	pop bc
 	cp .EOF
 	ret z
 	call DOS_TerminateIfError
 	push bc
-	push de
 	push ix
 	ld c,l
 	ld b,h
+	ld e,(ix + Application.addressCurrent + 0)
+	ld d,(ix + Application.addressCurrent + 1)
 	ld hl,Application_buffer
 	call ArrayIterator_ForEach
 	pop ix
-	pop de
 	pop bc
-	inc de
-	call Application_PrintProgress
-	jr Loop
+	call Application_NextAddress
+	jr nc,Loop
+	ret
 ; hl = source
 ; de = destination / 1000H
 ; bc = byte count (<= 1000H)
@@ -234,6 +281,8 @@ Application_Verify: PROC
 	ret z
 	ld hl,Application_messageVerifying
 	call System_PrintLn
+	call Application_InitAddress
+	ret c
 	call Application_FindFile
 	call Application_CheckCapacity
 	ld a,1
@@ -241,7 +290,6 @@ Application_Verify: PROC
 	call DOS_TerminateIfError
 	ld de,VerifyBlock
 	call Application_CreateFlashIterator
-	ld de,0000H
 	call Loop
 	push af
 	call DOS_CloseFileHandle
@@ -253,36 +301,32 @@ Application_Verify: PROC
 	ld hl,Application_messageVerifyFail
 	jp System_PrintLn
 ; b = file handle
-; de = physical address / 1000H
 ; ix = this
 ; iy = flash iterator
 Loop:
 	push bc
-	push de
 	ld de,Application_buffer
 	ld hl,FlashDevice_BLOCK_SIZE
 	call DOS_ReadFromFileHandle
-	pop de
 	pop bc
 	cp .EOF
 	ret z
 	call DOS_TerminateIfError
 	push bc
-	push de
 	push ix
 	ld c,l
 	ld b,h
+	ld e,(ix + Application.addressCurrent + 0)
+	ld d,(ix + Application.addressCurrent + 1)
 	ld hl,Application_buffer
 	call ArrayIterator_ForEach
 	pop ix
-	pop de
 	pop bc
-	inc de
-	push af
-	call Application_PrintProgress
-	pop af
 	ret nz
-	jr Loop
+	call Application_NextAddress
+	jr nc,Loop
+	xor a
+	ret
 ; hl = source
 ; de = destination / 1000H
 ; bc = byte count (<= 1000H)
@@ -306,58 +350,46 @@ Application_Dump: PROC
 	ret z
 	ld hl,Application_messageDumping
 	call System_PrintLn
+	call Application_InitAddress
+	ret c
 	call Application_CreateFile
 	ld a,2
 	call DOS_OpenFileHandle
 	call DOS_TerminateIfError
 	ld de,ReadBlock
 	call Application_CreateFlashIterator
-	ld de,0000H
 	call Loop
 	call DOS_CloseFileHandle
 	call DOS_TerminateIfError
 	call System_PrintCrLf
 	ret
 ; b = file handle
-; de = physical address / 1000H
 ; ix = this
 ; iy = flash iterator
 Loop:
 	push bc
-	push de
-	push bc
 	push ix
-	ex de,hl
+	ld l,(ix + Application.addressCurrent + 0)
+	ld h,(ix + Application.addressCurrent + 1)
 	ld bc,FlashDevice_BLOCK_SIZE
 	ld de,Application_buffer
 	call ArrayIterator_ForEach
 	pop ix
 	pop bc
-	jr c,Done
+	push bc
 	ld de,Application_buffer
 	ld hl,FlashDevice_BLOCK_SIZE
 	call DOS_WriteToFileHandle
 	call DOS_TerminateIfError
-	and a
-Done:
-	pop de
 	pop bc
-	inc de
-	push af
-	call Application_PrintProgress
-	pop af
+	call Application_NextAddress
 	jr nc,Loop
 	ret
 ; hl = source / 1000H
 ; de = destination
 ; bc = byte count (<= 1000H)
 ; ix = flash device
-; f <- c: out of range
 ReadBlock:
-	ex de,hl
-	call FlashDevice_CheckCapacity
-	ex de,hl
-	ret c
 	push bc
 	push de
 	push hl
@@ -365,7 +397,6 @@ ReadBlock:
 	pop hl
 	pop de
 	pop bc
-	and a
 	ret
 	ENDP
 
@@ -385,6 +416,32 @@ IsProgrammable:
 	call FlashDevice_IsProgrammable
 	ret z
 	jp ArrayIterator_ForEach.Break
+	ENDP
+
+; ix = this
+; f <- z: max capacity is zero
+; de <- max capacity / 1000H
+Application_GetMaxCapacity: PROC
+	ld de,GetMaxCapacity
+	call Application_CreateFlashIterator
+	push ix
+	ld de,0
+	call ArrayIterator_ForEach
+	pop ix
+	ret
+; de = current max capacity / 1000H
+; ix = flash device
+; f <- z: max capacity is zero
+; de <- new max capacity / 1000H
+GetMaxCapacity:
+	ld l,(ix + FlashDevice.capacity + 0)
+	ld h,(ix + FlashDevice.capacity + 1)
+	and a
+	sbc hl,de
+	ret c
+	adc hl,de
+	ex de,hl
+	ret
 	ENDP
 
 ; de = file info block
