@@ -119,7 +119,8 @@ Application_Test:
 
 ; ix = this
 Application_PrintInfo: PROC
-	ld a,(ix + Application.cli.info)
+	ld a,(ix + Application.cli.flags)
+	and 1 << CLI_FLAG_INFO
 	push ix
 	call Application_CreateFlashIterator
 	ld iy,Print
@@ -137,7 +138,7 @@ Print:
 
 ; ix = this
 Application_Erase: PROC
-	bit 0,(ix + Application.cli.erase)
+	bit CLI_FLAG_ERASE,(ix + Application.cli.flags)
 	ret z
 	ld hl,Application_messageErasingChip
 	call System_PrintLn
@@ -159,7 +160,7 @@ ChipErase:
 
 ; ix = this
 Application_Program: PROC
-	bit 0,(ix + Application.cli.program)
+	bit CLI_FLAG_PROGRAM,(ix + Application.cli.flags)
 	ret z
 	ld hl,Application_messageProgramming
 	call System_PrintLn
@@ -226,7 +227,7 @@ ProgramBlock:
 
 ; ix = this
 Application_Verify: PROC
-	bit 0,(ix + Application.cli.verify)
+	bit CLI_FLAG_VERIFY,(ix + Application.cli.flags)
 	ret z
 	ld hl,Application_messageVerifying
 	call System_PrintLn
@@ -300,7 +301,7 @@ VerifyBlock:
 
 ; ix = this
 Application_Dump: PROC
-	bit 0,(ix + Application.cli.dump)
+	bit CLI_FLAG_DUMP,(ix + Application.cli.flags)
 	ret z
 	ld hl,Application_messageDumping
 	call System_PrintLn

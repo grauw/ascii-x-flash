@@ -2,20 +2,16 @@
 ; Command-line interface parser
 ;
 CLI_BUFFER_SIZE: equ 255
+CLI_FLAG_USAGE: equ 0
+CLI_FLAG_ERASE: equ 1
+CLI_FLAG_PROGRAM: equ 2
+CLI_FLAG_VERIFY: equ 3
+CLI_FLAG_DUMP: equ 4
+CLI_FLAG_INFO: equ 5
 
 CLI: MACRO
-	usage:
-		db -1
-	erase:
-		db 0
-	program:
-		db 0
-	verify:
-		db 0
-	dump:
-		db 0
-	info:
-		db 0
+	flags:
+		db 1 << CLI_FLAG_USAGE
 	path:
 		dw 0
 	slotCount:
@@ -103,11 +99,11 @@ Loop:
 	jr nc,Path
 	jr Loop
 Option:
-	ld (ix + CLI.usage),0
+	res CLI_FLAG_USAGE,(ix + CLI.flags)
 	call CLI_ParseOption
 	jr Loop
 Path:
-	ld (ix + CLI.usage),0
+	res CLI_FLAG_USAGE,(ix + CLI.flags)
 	dec iy
 	call CLI_ParsePath
 	jr Loop
@@ -163,19 +159,19 @@ OptionSlot:
 	call CLI_ParseSlot
 	jp CLI_AddSlot
 OptionErase:
-	ld (ix + CLI.erase),-1
+	set CLI_FLAG_ERASE,(ix + CLI.flags)
 	jp CLI_ParseNoParameter
 OptionProgram:
-	ld (ix + CLI.program),-1
+	set CLI_FLAG_PROGRAM,(ix + CLI.flags)
 	jp CLI_ParseNoParameter
 OptionVerify:
-	ld (ix + CLI.verify),-1
+	set CLI_FLAG_VERIFY,(ix + CLI.flags)
 	jp CLI_ParseNoParameter
 OptionDump:
-	ld (ix + CLI.dump),-1
+	set CLI_FLAG_DUMP,(ix + CLI.flags)
 	jp CLI_ParseNoParameter
 OptionInfo:
-	ld (ix + CLI.info),-1
+	set CLI_FLAG_INFO,(ix + CLI.flags)
 	jp CLI_ParseNoParameter
 	ENDP
 
@@ -225,18 +221,18 @@ CLI_ParseSlot:
 
 ; ix = this
 CLI_Verify: PROC
-	bit 0,(ix + CLI.usage)
+	bit CLI_FLAG_USAGE,(ix + CLI.flags)
 	ld hl,CLI_messageUsage
 	call nz,System_ThrowExceptionWithMessage
 	ld a,(ix + CLI.slotCount)
 	cp 1
 	ld hl,CLI_errorNoSlot
 	call c,System_ThrowExceptionWithMessage
-	bit 0,(ix + CLI.program)
+	bit CLI_FLAG_PROGRAM,(ix + CLI.flags)
 	jr nz,Program
-	bit 0,(ix + CLI.verify)
+	bit CLI_FLAG_VERIFY,(ix + CLI.flags)
 	jr nz,Verify
-	bit 0,(ix + CLI.dump)
+	bit CLI_FLAG_DUMP,(ix + CLI.flags)
 	jr nz,Dump
 	ret
 Program:
@@ -245,7 +241,7 @@ Verify:
 	or (ix + CLI.path + 1)
 	ld hl,CLI_errorNoFile
 	call z,System_ThrowExceptionWithMessage
-	bit 0,(ix + CLI.dump)
+	bit CLI_FLAG_DUMP,(ix + CLI.flags)
 	ld hl,CLI_errorDumpProgramVerify
 	call nz,System_ThrowExceptionWithMessage
 	ret
@@ -254,10 +250,10 @@ Dump:
 	or (ix + CLI.path + 1)
 	ld hl,CLI_errorNoFile
 	call z,System_ThrowExceptionWithMessage
-	bit 0,(ix + CLI.program)
+	bit CLI_FLAG_PROGRAM,(ix + CLI.flags)
 	ld hl,CLI_errorDumpProgramVerify
 	call nz,System_ThrowExceptionWithMessage
-	bit 0,(ix + CLI.verify)
+	bit CLI_FLAG_VERIFY,(ix + CLI.flags)
 	ld hl,CLI_errorDumpProgramVerify
 	call nz,System_ThrowExceptionWithMessage
 	ld a,(ix + CLI.slotCount)
