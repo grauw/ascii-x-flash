@@ -163,6 +163,12 @@ OptionErase:
 	jp CLI_ParseNoParameter
 OptionProgram:
 	set CLI_FLAG_PROGRAM,(ix + CLI.flags)
+	ld a,(iy)
+	inc iy
+	cp "!"
+	jp z,CLI_ParseNoParameter
+	dec iy
+	set CLI_FLAG_ERASE,(ix + CLI.flags)
 	jp CLI_ParseNoParameter
 OptionVerify:
 	set CLI_FLAG_VERIFY,(ix + CLI.flags)
@@ -298,7 +304,8 @@ CLI_messageUsage:
 	db "  /s  Slot number (required). Format: p or p-s.",13,10
 	db "      Specify up to 8 for bulk flashing.",13,10
 	db "  /e  Erase flash ROM.",13,10
-	db "  /p  Program flash ROM from file.",13,10
+	db "  /p  Program flash ROM from file. Erase first.",13,10
+	db "  /p! Program flash ROM from file. No erase.",13,10
 	db "  /v  Verify flash ROM with file.",13,10
 	db "  /d  Dump flash ROM to file.",13,10
 	db "  /i  Display flash ROM information.",0
