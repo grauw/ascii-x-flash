@@ -90,9 +90,11 @@ Set:
 ; ix = this
 CLI_Parse: PROC
 	call CLI_GetBuffer_DE
+	ld iyl,e
+	ld iyh,d
 Loop:
-	ld a,(de)
-	inc de
+	ld a,(iy)
+	inc iy
 	and a
 	ret z
 	cp "/"
@@ -106,41 +108,43 @@ Option:
 	jr Loop
 Path:
 	ld (ix + CLI.usage),0
-	dec de
+	dec iy
 	call CLI_ParsePath
 	jr Loop
 	ENDP
 
-; de = buffer position
 ; ix = this
-; de <- buffer position after path
+; iy = buffer position
+; iy <- buffer position after path
 CLI_ParsePath: PROC
 	ld a,(ix + CLI.path)
 	or (ix + CLI.path + 1)
 	ld hl,CLI_errorMultiplePaths
 	call nz,System_ThrowExceptionWithMessage
+	ld e,iyl
+	ld d,iyh
 	ld (ix + CLI.path),e
 	ld (ix + CLI.path + 1),d
 Loop:
-	ld a,(de)
-	inc de
+	ld a,(iy)
+	inc iy
 	cp " " + 1
 	jr nc,Loop
-	dec de
+	dec iy
 	and a
 	ret z
 	xor a
-	ld (de),a
-	inc de
+	ld (iy),a
+	inc iy
 	ret
 	ENDP
 
-; de = buffer position
 ; ix = this
-; de <- buffer position after option
+; iy = buffer position
+; iy <- buffer position after option
 CLI_ParseOption: PROC
-	ld a,(de)
-	inc de
+	ld a,(iy)
+	inc iy
 	and 11011111B  ; upper-case
 	cp "S"
 	jr z,OptionSlot
@@ -176,38 +180,38 @@ OptionInfo:
 	jp CLI_ParseNoParameter
 	ENDP
 
-; de = buffer position
 ; ix = this
-; de <- buffer position after option
+; iy = buffer position
+; iy <- buffer position after option
 CLI_ParseNoParameter:
-	ld a,(de)
+	ld a,(iy)
 	cp " " + 1
 	ret c
 	ld hl,CLI_errorUnknownOption
 	call System_ThrowExceptionWithMessage
 
-; de = buffer position
 ; ix = this
+; iy = buffer position
 ; c <- slot ID
-; de <- buffer position after slot ID
+; iy <- buffer position after slot ID
 CLI_ParseSlot:
 	ld c,0
 	ld hl,CLI_errorParameter
-	ld a,(de)
-	inc de
+	ld a,(iy)
+	inc iy
 	sub "0"
 	call c,System_ThrowExceptionWithMessage
 	cp 4
 	call nc,System_ThrowExceptionWithMessage
 	ld c,a
-	ld a,(de)
+	ld a,(iy)
 	cp " " + 1
 	ret c
-	inc de
+	inc iy
 	cp "-"
 	call nz,System_ThrowExceptionWithMessage
-	ld a,(de)
-	inc de
+	ld a,(iy)
+	inc iy
 	sub "0"
 	call c,System_ThrowExceptionWithMessage
 	cp 4
@@ -217,7 +221,7 @@ CLI_ParseSlot:
 	or 80H
 	or c
 	ld c,a
-	ld a,(de)
+	ld a,(iy)
 	cp " " + 1
 	call nc,System_ThrowExceptionWithMessage
 	ret
