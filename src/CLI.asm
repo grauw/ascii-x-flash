@@ -115,7 +115,7 @@ Path:
 CLI_ParsePath: PROC
 	ld a,(ix + CLI.path)
 	or (ix + CLI.path + 1)
-	ld hl,CLI_errorMultiplePaths
+	ld hl,CLI_errorMoreFiles
 	call nz,System_ThrowExceptionWithMessage
 	ld e,iyl
 	ld d,iyh
@@ -220,48 +220,47 @@ CLI_ParseSlot:
 	ret
 
 ; ix = this
-CLI_Verify: PROC
+CLI_Verify:
 	bit CLI_FLAG_USAGE,(ix + CLI.flags)
 	ld hl,CLI_messageUsage
 	call nz,System_ThrowExceptionWithMessage
+	call CLI_VerifyCombinations
+	call CLI_VerifySlots
+	call CLI_VerifyPath
+	ret
+
+; ix = this
+CLI_VerifyCombinations:
+	bit CLI_FLAG_DUMP,(ix + CLI.flags)
+	ret z
+	ld a,(ix + CLI.flags)
+	and 1 << CLI_FLAG_ERASE | 1 << CLI_FLAG_PROGRAM | 1 << CLI_FLAG_VERIFY
+	ld hl,CLI_errorDumpCombination
+	call nz,System_ThrowExceptionWithMessage
+	ret
+
+; ix = this
+CLI_VerifySlots:
 	ld a,(ix + CLI.slotCount)
 	cp 1
 	ld hl,CLI_errorNoSlot
 	call c,System_ThrowExceptionWithMessage
-	bit CLI_FLAG_PROGRAM,(ix + CLI.flags)
-	jr nz,Program
-	bit CLI_FLAG_VERIFY,(ix + CLI.flags)
-	jr nz,Verify
+	ret z
 	bit CLI_FLAG_DUMP,(ix + CLI.flags)
-	jr nz,Dump
-	ret
-Program:
-Verify:
-	ld a,(ix + CLI.path + 0)
-	or (ix + CLI.path + 1)
-	ld hl,CLI_errorNoFile
-	call z,System_ThrowExceptionWithMessage
-	bit CLI_FLAG_DUMP,(ix + CLI.flags)
-	ld hl,CLI_errorDumpProgramVerify
-	call nz,System_ThrowExceptionWithMessage
-	ret
-Dump:
-	ld a,(ix + CLI.path + 0)
-	or (ix + CLI.path + 1)
-	ld hl,CLI_errorNoFile
-	call z,System_ThrowExceptionWithMessage
-	bit CLI_FLAG_PROGRAM,(ix + CLI.flags)
-	ld hl,CLI_errorDumpProgramVerify
-	call nz,System_ThrowExceptionWithMessage
-	bit CLI_FLAG_VERIFY,(ix + CLI.flags)
-	ld hl,CLI_errorDumpProgramVerify
-	call nz,System_ThrowExceptionWithMessage
-	ld a,(ix + CLI.slotCount)
-	cp 2
 	ld hl,CLI_errorTooManySlots
-	call nc,System_ThrowExceptionWithMessage
+	call nz,System_ThrowExceptionWithMessage
 	ret
-	ENDP
+
+; ix = this
+CLI_VerifyPath:
+	ld a,(ix + CLI.flags)
+	and 1 << CLI_FLAG_PROGRAM | 1 << CLI_FLAG_VERIFY | 1 << CLI_FLAG_DUMP
+	ret z
+	ld a,(ix + CLI.path + 0)
+	or (ix + CLI.path + 1)
+	ld hl,CLI_errorNoFile
+	call z,System_ThrowExceptionWithMessage
+	ret
 
 CLI_ThrowUnknownOption:
 	ld hl,CLI_errorUnknownOption
@@ -278,10 +277,8 @@ CLI_errorUnknownOption:
 	db "Unknown command line option.",0
 CLI_errorParameter:
 	db "Missing or invalid command line option parameter.",0
-CLI_errorMultiplePaths:
-	db "Can not specify more than one file path.",0
-CLI_errorDumpProgramVerify:
-	db "Can not combine dump with program or verify.",0
+CLI_errorDumpCombination:
+	db "Can not combine dump with other operations.",0
 CLI_errorSlotExpansion:
 	db "Specified slot expansion incorrect.",0
 CLI_errorSameSlot:
@@ -290,6 +287,8 @@ CLI_errorTooManySlots:
 	db "Too many slots specified.",0
 CLI_errorNoSlot:
 	db "No slot specified.",0
+CLI_errorMoreFiles:
+	db "Can not specify more than one file.",0
 CLI_errorNoFile:
 	db "No file specified.",0
 CLI_messageUsage:
