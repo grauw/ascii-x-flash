@@ -70,11 +70,41 @@ ConstructFlashDevice:
 	ENDP
 
 ; ix = this
-Application_ConstructAddress:
+Application_ConstructAddress: PROC
 	call Application_GetMaxCapacity
+	jr z,NoMaxCapacity
+	ld l,(ix + Application.cli.addressStart + 0)
+	ld h,(ix + Application.cli.addressStart + 1)
+	and a
+	sbc hl,de
+	call nc,CLI_ThrowAddress
+	add hl,de
+	ld (ix + Application.addressStart + 0),l
+	ld (ix + Application.addressStart + 1),h
+	ld (ix + Application.addressEnd + 0),e
+	ld (ix + Application.addressEnd + 1),d
+	ld l,(ix + Application.cli.addressEnd + 0)
+	ld h,(ix + Application.cli.addressEnd + 1)
+	ld a,l
+	or h
+	ret z
+	ld (ix + Application.addressEnd + 0),l
+	ld (ix + Application.addressEnd + 1),h
+	scf
+	sbc hl,de
+	call nc,CLI_ThrowAddress
+	ret
+NoMaxCapacity:
+	ld l,(ix + Application.cli.addressStart + 0)
+	ld h,(ix + Application.cli.addressStart + 1)
+	ld e,(ix + Application.cli.addressEnd + 0)
+	ld d,(ix + Application.cli.addressEnd + 1)
+	ld (ix + Application.addressStart + 0),l
+	ld (ix + Application.addressStart + 1),h
 	ld (ix + Application.addressEnd + 0),e
 	ld (ix + Application.addressEnd + 1),d
 	ret
+	ENDP
 
 ; ix = this
 Application_Destruct:

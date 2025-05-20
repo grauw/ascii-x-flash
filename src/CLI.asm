@@ -14,6 +14,10 @@ CLI: MACRO
 		db 0
 	path:
 		dw 0
+	addressStart:
+		dw 0
+	addressEnd:
+		dw 0
 	slotCount:
 		db 0
 	slots:
@@ -164,6 +168,8 @@ CLI_ParseOption: PROC
 	jr z,OptionInfo
 	cp "H"
 	jr z,OptionHelp
+	cp "A"
+	jr z,OptionAddress
 	jp CLI_ThrowUnknownOption
 OptionSlot:
 	call CLI_ParseSlot
@@ -192,6 +198,28 @@ OptionInfo:
 OptionHelp:
 	set CLI_FLAG_HELP,(ix + CLI.flags)
 	jp CLI_ParseNoParameter
+OptionAddress:
+	ld a,(iy)
+	inc iy
+	and 11011111B  ; upper-case
+	cp "S"
+	jr z,OptionAddressStart
+	cp "E"
+	jr z,OptionAddressEnd
+	jp CLI_ThrowUnknownOption
+OptionAddressStart:
+	call CLI_ParseAddress
+	ld (ix + CLI.addressStart + 0),l
+	ld (ix + CLI.addressStart + 1),h
+	ret
+OptionAddressEnd:
+	call CLI_ParseAddress
+	ld a,l
+	or h
+	call z,CLI_ThrowAddress
+	ld (ix + CLI.addressEnd + 0),l
+	ld (ix + CLI.addressEnd + 1),h
+	ret
 	ENDP
 
 ; ix = this
@@ -239,10 +267,75 @@ CLI_ParseSlot:
 	ret
 
 ; ix = this
+; iy = buffer position
+; hl <- address / 1000H
+; iy <- buffer position after address
+CLI_ParseAddress:
+	call CLI_ParseHexNumber
+	ld a,l
+	and a
+	call nz,CLI_ThrowAddress
+	ld a,h
+	ld l,e
+	ld h,d
+	REPT 4
+	add a,a
+	adc hl,hl
+	call c,CLI_ThrowAddress
+	ENDM
+	and a
+	call nz,CLI_ThrowAddress
+	ret
+
+; ix = this
+; iy = buffer position
+; dehl <- number
+; iy <- buffer position after number
+CLI_ParseHexNumber: PROC
+	ld hl,0
+	ld de,0
+	ld b,0
+Loop:
+	REPT 4
+	add hl,hl
+	rl e
+	rl d
+	call c,CLI_ThrowParameter
+	ENDM
+Separator:
+	call Digit
+	ld c,a
+	add hl,bc
+	ld a,(iy)
+	cp " " + 1
+	ret c
+	cp "'"  ; digit separator
+	jr nz,Loop
+	inc iy
+	jr Separator
+Digit:
+	ld a,(iy)
+	inc iy
+	sub "0"
+	call c,CLI_ThrowParameter
+	cp 10
+	ret c
+	add a,"0"
+	and 11011111B  ; upper-case
+	sub "A"
+	call c,CLI_ThrowParameter
+	cp 6
+	call nc,CLI_ThrowParameter
+	add a,10
+	ret
+	ENDP
+
+; ix = this
 CLI_Verify:
 	call CLI_VerifyCombinations
 	call CLI_VerifySlots
 	call CLI_VerifyPath
+	call CLI_VerifyAddress
 	ret
 
 ; ix = this
@@ -281,12 +374,36 @@ CLI_VerifyPath:
 	call z,System_ThrowExceptionWithMessage
 	ret
 
+; ix = this
+CLI_VerifyAddress:
+	ld e,(ix + CLI.addressStart + 0)
+	ld d,(ix + CLI.addressStart + 1)
+	ld hl,-ASCII16XMapper_MAX_ADDRESS
+	add hl,de
+	call c,CLI_ThrowAddress
+	ex de,hl
+	ld e,(ix + CLI.addressEnd + 0)
+	ld d,(ix + CLI.addressEnd + 1)
+	ld a,e
+	or d
+	ret z
+	sbc hl,de
+	call nc,CLI_ThrowAddress
+	ld hl,-ASCII16XMapper_MAX_ADDRESS - 1
+	add hl,de
+	call c,CLI_ThrowAddress
+	ret
+
 CLI_ThrowUnknownOption:
 	ld hl,CLI_errorUnknownOption
 	jp System_ThrowExceptionWithMessage
 
 CLI_ThrowParameter:
 	ld hl,CLI_errorParameter
+	jp System_ThrowExceptionWithMessage
+
+CLI_ThrowAddress:
+	ld hl,CLI_errorAddress
 	jp System_ThrowExceptionWithMessage
 
 ;
@@ -310,6 +427,8 @@ CLI_errorMoreFiles:
 	db "Can not specify more than one file.",0
 CLI_errorNoFile:
 	db "No file specified.",0
+CLI_errorAddress:
+	db "Invalid address specified.",0
 CLI_messageBasicHelp:
 	db "Usage: asciixf [options] [<file.rom>]",13,10
 	db 13,10
@@ -337,6 +456,11 @@ CLI_messageAdvancedHelp:
 	db "  /d  Dump flash ROM to file.",13,10
 	db "  /i  Display flash ROM information.",13,10
 	db "  /h  Show advanced options.",13,10
+	db "  /as Address range start.",13,10
+	db "  /ae Address range end (exclusive).",13,10
+	db 13,10
+	db "Addresses are hex bytes aligned to 1000H.",13,10
+	db "They can contain a ' as digit separator.",13,10
 	db 13,10
 	db "Example:",13,10
 	db 13,10

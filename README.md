@@ -56,6 +56,11 @@ Advanced options:
   * `/d`  Dump flash ROM to file.
   * `/i`  Display flash ROM information.
   * `/h`  Show advanced options.
+  * `/as` Address range start.
+  * `/ae` Address range end (exclusive).
+
+Addresses are hex bytes aligned to `1000H`.
+They can contain a `'` as digit separator.
 
 ## Development information
 

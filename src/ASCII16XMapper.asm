@@ -1,6 +1,8 @@
 ;
 ; ASCII16-X mapper
 ;
+ASCII16XMapper_MAX_ADDRESS: equ 4000H  ; * 1000H = 64 MB
+
 ; Modifies: a
 ASCII16XMapper_Reset:
 	ld a,0
