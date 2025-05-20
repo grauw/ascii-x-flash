@@ -22,7 +22,7 @@ Application: MACRO
 	ENDM
 
 ; ix = this
-Application_Construct: PROC
+Application_Construct:
 	ld hl,Application_messageWelcome
 	call System_PrintLn
 	call System_PrintCrLf
@@ -36,6 +36,11 @@ Application_Construct: PROC
 	call Application_GetCLI
 	call CLI_Construct
 	pop ix
+	call Application_ConstructFlashDevices
+	ret
+
+; ix = this
+Application_ConstructFlashDevices: PROC
 	ld e,ixl
 	ld d,ixh
 	ld hl,Application.cli.slots
