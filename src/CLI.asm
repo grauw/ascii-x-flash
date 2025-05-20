@@ -301,6 +301,7 @@ CLI_messageUsage:
 	db "Usage: asciixf [options] [<file.rom>]",13,10
 	db 13,10
 	db "Options:",13,10
+	db 13,10
 	db "  /s  Slot number (required). Format: p or p-s.",13,10
 	db "      Specify up to 8 for bulk flashing.",13,10
 	db "  /e  Erase flash ROM.",13,10
@@ -308,4 +309,8 @@ CLI_messageUsage:
 	db "  /p! Program flash ROM from file. No erase.",13,10
 	db "  /v  Verify flash ROM with file.",13,10
 	db "  /d  Dump flash ROM to file.",13,10
-	db "  /i  Display flash ROM information.",0
+	db "  /i  Display flash ROM information.",13,10
+	db 13,10
+	db "Example:",13,10
+	db 13,10
+	db "  asciixf /s2 /p /v example.rom",0
