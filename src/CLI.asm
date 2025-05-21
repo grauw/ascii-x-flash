@@ -14,6 +14,8 @@ CLI: MACRO
 		db 0
 	path:
 		dw 0
+	fileStart:
+		dd 0
 	addressStart:
 		dw 0
 	addressEnd:
@@ -168,6 +170,8 @@ CLI_ParseOption: PROC
 	jr z,OptionInfo
 	cp "H"
 	jr z,OptionHelp
+	cp "F"
+	jr z,OptionFile
 	cp "A"
 	jr z,OptionAddress
 	jp CLI_ThrowUnknownOption
@@ -198,6 +202,20 @@ OptionInfo:
 OptionHelp:
 	set CLI_FLAG_HELP,(ix + CLI.flags)
 	jp CLI_ParseNoParameter
+OptionFile:
+	ld a,(iy)
+	inc iy
+	and 11011111B  ; upper-case
+	cp "S"
+	jr z,OptionFileStart
+	jp CLI_ThrowUnknownOption
+OptionFileStart:
+	call CLI_ParseHexNumber
+	ld (ix + CLI.fileStart + 0),l
+	ld (ix + CLI.fileStart + 1),h
+	ld (ix + CLI.fileStart + 2),e
+	ld (ix + CLI.fileStart + 3),d
+	ret
 OptionAddress:
 	ld a,(iy)
 	inc iy
@@ -456,6 +474,7 @@ CLI_messageAdvancedHelp:
 	db "  /d  Dump flash ROM to file.",13,10
 	db "  /i  Display flash ROM information.",13,10
 	db "  /h  Show advanced options.",13,10
+	db "  /fs File start offset.",13,10
 	db "  /as Address range start.",13,10
 	db "  /ae Address range end (exclusive).",13,10
 	db 13,10

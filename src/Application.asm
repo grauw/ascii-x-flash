@@ -257,6 +257,7 @@ Application_Program: PROC
 	ld a,1
 	call DOS_OpenFileHandle
 	call DOS_TerminateIfError
+	call Application_SetFileStart
 	ld de,ProgramBlock
 	call Application_CreateFlashIterator
 	call Loop
@@ -318,6 +319,7 @@ Application_Verify: PROC
 	ld a,1
 	call DOS_OpenFileHandle
 	call DOS_TerminateIfError
+	call Application_SetFileStart
 	ld de,VerifyBlock
 	call Application_CreateFlashIterator
 	call Loop
@@ -572,6 +574,19 @@ Application_CreateFile:
 	ld e,ixl
 	ld d,ixh
 	pop ix
+	ret
+
+; ix = this
+Application_SetFileStart:
+	ld l,(ix + Application.cli.fileStart + 0)
+	ld h,(ix + Application.cli.fileStart + 1)
+	ld e,(ix + Application.cli.fileStart + 2)
+	ld d,(ix + Application.cli.fileStart + 3)
+	ld a,0
+	push bc
+	call DOS_MoveFileHandlePointer
+	call DOS_TerminateIfError
+	pop bc
 	ret
 
 ;

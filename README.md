@@ -56,6 +56,7 @@ Advanced options:
   * `/d`  Dump flash ROM to file.
   * `/i`  Display flash ROM information.
   * `/h`  Show advanced options.
+  * `/fs` File start offset.
   * `/as` Address range start.
   * `/ae` Address range end (exclusive).
 
