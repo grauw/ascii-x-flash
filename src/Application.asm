@@ -105,6 +105,12 @@ Application_CreateFlashIterator:
 ; ix = this
 Application_Run:
 	call Application_Test
+	ld a,(ix + Application.cli.flags)
+	or (ix + Application.cli.slotCount)
+	and a
+	jp z,CLI_PrintBasicHelp
+	bit CLI_FLAG_HELP,(ix + Application.cli.flags)
+	jp nz,CLI_PrintAdvancedHelp
 	call Application_PrintInfo
 	call Application_Erase
 	call Application_Program

@@ -2,7 +2,7 @@
 ; Command-line interface parser
 ;
 CLI_BUFFER_SIZE: equ 255
-CLI_FLAG_USAGE: equ 0
+CLI_FLAG_HELP: equ 0
 CLI_FLAG_ERASE: equ 1
 CLI_FLAG_PROGRAM: equ 2
 CLI_FLAG_VERIFY: equ 3
@@ -11,7 +11,7 @@ CLI_FLAG_INFO: equ 5
 
 CLI: MACRO
 	flags:
-		db 1 << CLI_FLAG_USAGE
+		db 0
 	path:
 		dw 0
 	slotCount:
@@ -84,6 +84,16 @@ Set:
 	ENDP
 
 ; ix = this
+CLI_PrintBasicHelp:
+	ld hl,CLI_messageBasicHelp
+	jp System_PrintLn
+
+; ix = this
+CLI_PrintAdvancedHelp:
+	ld hl,CLI_messageAdvancedHelp
+	jp System_PrintLn
+
+; ix = this
 CLI_Parse: PROC
 	call CLI_GetBuffer_DE
 	ld iyl,e
@@ -99,11 +109,9 @@ Loop:
 	jr nc,Path
 	jr Loop
 Option:
-	res CLI_FLAG_USAGE,(ix + CLI.flags)
 	call CLI_ParseOption
 	jr Loop
 Path:
-	res CLI_FLAG_USAGE,(ix + CLI.flags)
 	dec iy
 	call CLI_ParsePath
 	jr Loop
@@ -154,6 +162,8 @@ CLI_ParseOption: PROC
 	jr z,OptionDump
 	cp "I"
 	jr z,OptionInfo
+	cp "H"
+	jr z,OptionHelp
 	jp CLI_ThrowUnknownOption
 OptionSlot:
 	call CLI_ParseSlot
@@ -178,6 +188,9 @@ OptionDump:
 	jp CLI_ParseNoParameter
 OptionInfo:
 	set CLI_FLAG_INFO,(ix + CLI.flags)
+	jp CLI_ParseNoParameter
+OptionHelp:
+	set CLI_FLAG_HELP,(ix + CLI.flags)
 	jp CLI_ParseNoParameter
 	ENDP
 
@@ -227,9 +240,6 @@ CLI_ParseSlot:
 
 ; ix = this
 CLI_Verify:
-	bit CLI_FLAG_USAGE,(ix + CLI.flags)
-	ld hl,CLI_messageUsage
-	call nz,System_ThrowExceptionWithMessage
 	call CLI_VerifyCombinations
 	call CLI_VerifySlots
 	call CLI_VerifyPath
@@ -247,6 +257,9 @@ CLI_VerifyCombinations:
 
 ; ix = this
 CLI_VerifySlots:
+	ld a,(ix + CLI.flags)
+	and ~(1 << CLI_FLAG_HELP)
+	ret z
 	ld a,(ix + CLI.slotCount)
 	cp 1
 	ld hl,CLI_errorNoSlot
@@ -297,7 +310,20 @@ CLI_errorMoreFiles:
 	db "Can not specify more than one file.",0
 CLI_errorNoFile:
 	db "No file specified.",0
-CLI_messageUsage:
+CLI_messageBasicHelp:
+	db "Usage: asciixf [options] [<file.rom>]",13,10
+	db 13,10
+	db "Options:",13,10
+	db 13,10
+	db "  /s  Slot number (required). Format: p or p-s.",13,10
+	db "  /p  Program flash ROM from file. Erase first.",13,10
+	db "  /v  Verify flash ROM with file.",13,10
+	db "  /h  Show advanced options.",13,10
+	db 13,10
+	db "Example:",13,10
+	db 13,10
+	db "  asciixf /s2 /p /v example.rom",0
+CLI_messageAdvancedHelp:
 	db "Usage: asciixf [options] [<file.rom>]",13,10
 	db 13,10
 	db "Options:",13,10
@@ -310,6 +336,7 @@ CLI_messageUsage:
 	db "  /v  Verify flash ROM with file.",13,10
 	db "  /d  Dump flash ROM to file.",13,10
 	db "  /i  Display flash ROM information.",13,10
+	db "  /h  Show advanced options.",13,10
 	db 13,10
 	db "Example:",13,10
 	db 13,10

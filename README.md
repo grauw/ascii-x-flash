@@ -34,20 +34,28 @@ Usage:
 
 Options:
 
-  * `/s` Slot number (required). Format: p or p-s.
-         Specify up to 8 for bulk flashing.
-  * `/e` Erase flash ROM.
-  * `/p` Program flash ROM from file. Erase first.
-  * `/p!` Program flash ROM from file. No erase.
-  * `/v` Verify flash ROM with file.
-  * `/d` Dump flash ROM to file.
-  * `/i` Display flash ROM information.
+  * `/s`  Slot number (required). Format: p or p-s.
+  * `/p`  Program flash ROM from file. Erase first.
+  * `/v`  Verify flash ROM with file.
+  * `/h`  Show advanced options.
 
 Example:
 
     asciixf /s2 /p /v example.rom
 
 This erases, programs and verifies a ROM to the ASCII-X cartridge in slot 2.
+
+Advanced options:
+
+  * `/s`  Slot number (required). Format: p or p-s.
+          Specify up to 8 for bulk flashing.
+  * `/e`  Erase flash ROM.
+  * `/p`  Program flash ROM from file. Erase first.
+  * `/p!` Program flash ROM from file. No erase.
+  * `/v`  Verify flash ROM with file.
+  * `/d`  Dump flash ROM to file.
+  * `/i`  Display flash ROM information.
+  * `/h`  Show advanced options.
 
 ## Development information
 
