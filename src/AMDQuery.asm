@@ -195,6 +195,7 @@ AMDQuery_PrintPageMode:
 	ld a,(ix + AMDQuery.pageMode)
 	and a
 	ld hl,CFIQuery_messageNotSupported
+	jp z,System_PrintLn
 	inc a
 	jp CFIQuery_PrintSize
 
