@@ -20,6 +20,8 @@ ArrayIterator: MACRO ?capacity
 ; Modifies: af
 ArrayIterator_Construct: PROC
 	push iy
+	and a
+	jr z,Done
 Loop:
 	ld (iy + ArrayIterator.ForEach + 0),0DDH  ; ld ix,nn
 	ld (iy + ArrayIterator.ForEach + 1),021H
@@ -34,6 +36,7 @@ Loop:
 	add hl,bc
 	dec a
 	jr nz,Loop
+Done:
 	ld (iy + ArrayIterator.ForEach + 0),0C9H  ; ret
 	pop iy
 	ret
