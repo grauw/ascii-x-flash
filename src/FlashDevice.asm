@@ -50,17 +50,24 @@ FlashDevice_ConstructCFIQuery:
 	jp FlashCommand_Reset
 
 ; ix = this
-FlashDevice_ConstructManufacturerDeviceID:
+FlashDevice_ConstructManufacturerDeviceID: PROC
 	call FlashCommand_AutoSelect
 	ld a,(4000H + 00H)
 	ld (ix + FlashDevice.manufacturerID),a
 	ld a,(4000H + 02H)
 	ld (ix + FlashDevice.deviceID + 0),a
+	cp 7EH
+	jp nz,SingleDeviceID
 	ld a,(4000H + 1CH)
 	ld (ix + FlashDevice.deviceID + 1),a
 	ld a,(4000H + 1EH)
 	ld (ix + FlashDevice.deviceID + 2),a
 	jp FlashCommand_Reset
+SingleDeviceID:
+	ld (ix + FlashDevice.deviceID + 1),0
+	ld (ix + FlashDevice.deviceID + 2),0
+	jp FlashCommand_Reset
+	ENDP
 
 ; ix = this
 FlashDevice_ConstructContinuity:
@@ -182,6 +189,8 @@ FlashDevice_PrintDeviceID:
 	call System_Print
 	ld a,(ix + FlashDevice.deviceID + 0)
 	call System_PrintHexA
+	cp 7EH
+	jp nz,System_PrintCrLf
 	ld a," "
 	call System_PrintChar
 	ld a,(ix + FlashDevice.deviceID + 1)
