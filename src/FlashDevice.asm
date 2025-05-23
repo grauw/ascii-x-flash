@@ -91,12 +91,19 @@ FlashDevice_GetCFIQuery:
 
 ; ix = this
 ; f <- nz: not flash
-FlashDevice_IsFlash:
+FlashDevice_IsFlash: PROC
+	ld a,(ix + FlashDevice.manufacturerID)
+	and a
+	jp pe,NotFlash
 	push ix
 	call FlashDevice_GetCFIQuery
 	call CFIQuery_HasSignature
 	pop ix
 	ret
+NotFlash:
+	or 1
+	ret
+	ENDP
 
 ; ix = this
 ; f <- nz: not programmable
