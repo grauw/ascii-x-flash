@@ -297,21 +297,21 @@ CLI_ParseSlot:
 CLI_parametersEnvName:
 	db "PARAMETERS",0
 CLI_errorUnknownOption:
-	db "Unknown command line option.",13,10,0
+	db "Unknown command line option.",0
 CLI_errorParameter:
-	db "Missing or invalid command line option parameter.",13,10,0
+	db "Missing or invalid command line option parameter.",0
 CLI_errorMultiplePaths:
-	db "Can not specify more than one file path.",13,10,0
+	db "Can not specify more than one file path.",0
 CLI_errorDumpProgramVerify:
-	db "Can not combine dump with program or verify.",13,10,0
+	db "Can not combine dump with program or verify.",0
 CLI_errorSameSlot:
-	db "Same slot specified multiple times.",13,10,0
+	db "Same slot specified multiple times.",0
 CLI_errorTooManySlots:
-	db "Too many slots specified.",13,10,0
+	db "Too many slots specified.",0
 CLI_errorNoSlot:
-	db "No slot specified.",13,10,0
+	db "No slot specified.",0
 CLI_errorNoFile:
-	db "No file specified.",13,10,0
+	db "No file specified.",0
 CLI_messageUsage:
 	db "Usage: asciixf [options] [<file.rom>]",13,10
 	db 13,10
@@ -322,4 +322,4 @@ CLI_messageUsage:
 	db "  /p  Program flash ROM from file.",13,10
 	db "  /v  Verify flash ROM with file.",13,10
 	db "  /d  Dump flash ROM to file.",13,10
-	db "  /i  Display flash ROM information.",13,10,0
+	db "  /i  Display flash ROM information.",0

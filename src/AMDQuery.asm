@@ -142,15 +142,15 @@ AMDQuery_PrintEraseSuspend:
 	ld a,(ix + AMDQuery.eraseSuspend)
 	cp 0
 	ld hl,CFIQuery_messageNotSupported
-	jp z,System_Print
+	jp z,System_PrintLn
 	cp 1
 	ld hl,AMDQuery_messageReadOnly
-	jp z,System_Print
+	jp z,System_PrintLn
 	cp 2
 	ld hl,AMDQuery_messageReadWrite
-	jp z,System_Print
+	jp z,System_PrintLn
 	ld hl,AMDQuery_messageUnknown
-	jp System_Print
+	jp System_PrintLn
 
 ; ix = this
 AMDQuery_PrintSectorProtect:
@@ -241,32 +241,32 @@ AMDQuery_PrintVersionNumber:
 AMDQuery_PrintRequired:
 	cp 0
 	ld hl,AMDQuery_messageRequired
-	jp z,System_Print
+	jp z,System_PrintLn
 	cp 1
 	ld hl,AMDQuery_messageNotRequired
-	jp z,System_Print
+	jp z,System_PrintLn
 	ld hl,AMDQuery_messageUnknown
-	jp System_Print
+	jp System_PrintLn
 
 ; a = 1: supported
 AMDQuery_PrintSupported:
 	cp 0
 	ld hl,CFIQuery_messageNotSupported
-	jp z,System_Print
+	jp z,System_PrintLn
 	cp 1
 	ld hl,CFIQuery_messageSupported
-	jp z,System_Print
+	jp z,System_PrintLn
 	ld hl,AMDQuery_messageUnknown
-	jp System_Print
+	jp System_PrintLn
 
 ; a = count
 AMDQuery_PrintSectors:
 	and a
 	ld hl,CFIQuery_messageNotSupported
-	jp z,System_Print
+	jp z,System_PrintLn
 	call System_PrintDecA
 	ld hl,AMDQuery_messageSectors
-	jp System_Print
+	jp System_PrintLn
 
 ;
 AMDQuery_messageVendorSpecificVersion:
@@ -298,14 +298,14 @@ AMDQuery_messageBootSectorType:
 AMDQuery_messageProgramSuspend:
 	db "- Program suspend: ",0
 AMDQuery_messageRequired:
-	db "Required",13,10,0
+	db "Required",0
 AMDQuery_messageNotRequired:
-	db "Not required",13,10,0
+	db "Not required",0
 AMDQuery_messageReadOnly:
-	db "Read-only",13,10,0
+	db "Read-only",0
 AMDQuery_messageReadWrite:
-	db "Read/write",13,10,0
+	db "Read/write",0
 AMDQuery_messageUnknown:
-	db "Unknown",13,10,0
+	db "Unknown",0
 AMDQuery_messageSectors:
-	db " sectors",13,10,0
+	db " sectors",0

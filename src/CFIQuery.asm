@@ -179,10 +179,10 @@ LoopLine:
 ; ix = this
 CFIQuery_Print:
 	ld hl,CFIQuery_message
-	call System_Print
+	call System_PrintLn
 	call CFIQuery_HasSignature
 	ld hl,CFIQuery_messageNoSignature
-	jp nz,System_Print
+	jp nz,System_PrintLn
 	call CFIQuery_PrintQuery
 	ld l,(ix + CFIQuery.primaryVendorID + 0)
 	ld h,(ix + CFIQuery.primaryVendorID + 1)
@@ -324,17 +324,17 @@ CFIQuery_PrintDeviceInterface:
 	ld hl,0000H
 	sbc hl,de
 	ld hl,CFIQuery_messageDeviceInterfaceX8
-	jp z,System_Print
+	jp z,System_PrintLn
 	and a
 	ld hl,0001H
 	sbc hl,de
 	ld hl,CFIQuery_messageDeviceInterfaceX16
-	jp z,System_Print
+	jp z,System_PrintLn
 	and a
 	ld hl,0002H
 	sbc hl,de
 	ld hl,CFIQuery_messageDeviceInterfaceX8X16
-	jp z,System_Print
+	jp z,System_PrintLn
 	ex de,hl
 	call System_PrintHexHL
 	jp System_PrintCrLf
@@ -391,7 +391,7 @@ Loop:
 	ld d,0
 	call System_PrintDecDEHL
 	ld hl,CFIQuery_messageBytes
-	call System_Print
+	call System_PrintLn
 	pop ix
 	inc a
 	jr Loop
@@ -401,7 +401,7 @@ Loop:
 CFIQuery_PrintVoltage:
 	and a
 	ld hl,CFIQuery_messageNotSupported
-	jp z,System_Print
+	jp z,System_PrintLn
 	push af
 	rrca
 	rrca
@@ -424,25 +424,25 @@ CFIQuery_PrintVoltage:
 CFIQuery_PrintMilliSeconds:
 	and a
 	ld hl,CFIQuery_messageNotSupported
-	jp z,System_Print
+	jp z,System_PrintLn
 	call CFIQuery_PrintTwoToThePowerA
 	ld hl,CFIQuery_messageMilliSeconds
-	jp System_Print
+	jp System_PrintLn
 
 ; a = microseconds
 CFIQuery_PrintMicroSeconds:
 	and a
 	ld hl,CFIQuery_messageNotSupported
-	jp z,System_Print
+	jp z,System_PrintLn
 	call CFIQuery_PrintTwoToThePowerA
 	ld hl,CFIQuery_messageMicroSeconds
-	jp System_Print
+	jp System_PrintLn
 
 ; a = 2^size
 CFIQuery_PrintSize: PROC
 	and a
 	ld hl,CFIQuery_messageNotSupported
-	jp z,System_Print
+	jp z,System_PrintLn
 	sub 10
 	jr c,Bytes
 	sub 10
@@ -454,23 +454,23 @@ CFIQuery_PrintSize: PROC
 	add a,40
 	call CFIQuery_PrintTwoToThePowerA
 	ld hl,CFIQuery_messageBytes
-	jp System_Print
+	jp System_PrintLn
 Bytes:
 	call PrintTwoToThePowerAPlus10
 	ld hl,CFIQuery_messageBytes
-	jp System_Print
+	jp System_PrintLn
 KiloBytes:
 	call PrintTwoToThePowerAPlus10
 	ld hl,CFIQuery_messageKiloBytes
-	jp System_Print
+	jp System_PrintLn
 MegaBytes:
 	call PrintTwoToThePowerAPlus10
 	ld hl,CFIQuery_messageMegaBytes
-	jp System_Print
+	jp System_PrintLn
 GigaBytes:
 	call PrintTwoToThePowerAPlus10
 	ld hl,CFIQuery_messageGigaBytes
-	jp System_Print
+	jp System_PrintLn
 PrintTwoToThePowerAPlus10: PROC
 	add a,10
 	ld hl,1
@@ -495,9 +495,9 @@ CFIQuery_PrintTwoToThePowerA:
 
 ;
 CFIQuery_message:
-	db "Common Flash Interface query:",13,10,0
+	db "Common Flash Interface query:",0
 CFIQuery_messageNoSignature:
-	db "Signature not found.",13,10,0
+	db "Signature not found.",0
 CFIQuery_messageVccMin:
 	db "- Vcc min: ",0
 CFIQuery_messageVccMax:
@@ -527,11 +527,11 @@ CFIQuery_messageDeviceSize:
 CFIQuery_messageDeviceInterface:
 	db "- Flash device interface: ",0
 CFIQuery_messageDeviceInterfaceX8:
-	db "x8",13,10,0
+	db "x8",0
 CFIQuery_messageDeviceInterfaceX16:
-	db "x16",13,10,0
+	db "x16",0
 CFIQuery_messageDeviceInterfaceX8X16:
-	db "x8/x16",13,10,0
+	db "x8/x16",0
 CFIQuery_messageMaxBufferWrite:
 	db "- Max buffer write: ",0
 CFIQuery_messageRegionCount:
@@ -543,18 +543,18 @@ CFIQuery_messageRegionSectorCount:
 CFIQuery_messageRegionSectorSize:
 	db " sector size: ",0
 CFIQuery_messageSupported:
-	db "Supported",13,10,0
+	db "Supported",0
 CFIQuery_messageNotSupported:
-	db "Not supported",13,10,0
+	db "Not supported",0
 CFIQuery_messageMilliSeconds:
-	db " ms",13,10,0
+	db " ms",0
 CFIQuery_messageMicroSeconds:
-	db " us",13,10,0
+	db " us",0
 CFIQuery_messageBytes:
-	db " bytes",13,10,0
+	db " bytes",0
 CFIQuery_messageKiloBytes:
-	db " kB",13,10,0
+	db " kB",0
 CFIQuery_messageMegaBytes:
-	db " MB",13,10,0
+	db " MB",0
 CFIQuery_messageGigaBytes:
-	db " GB",13,10,0
+	db " GB",0

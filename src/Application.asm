@@ -23,7 +23,8 @@ Application: MACRO
 ; ix = this
 Application_Construct: PROC
 	ld hl,Application_messageWelcome
-	call System_Print
+	call System_PrintLn
+	call System_PrintCrLf
 	ld h,40H
 	call Memory_GetSlot
 	ld (ix + Application.slotRestore1.id),a
@@ -139,7 +140,7 @@ Application_Erase: PROC
 	bit 0,(ix + Application.cli.erase)
 	ret z
 	ld hl,Application_messageErasingChip
-	call System_Print
+	call System_PrintLn
 	call Application_CheckProgrammable
 	push ix
 	call Application_CreateFlashIterator
@@ -161,7 +162,7 @@ Application_Program: PROC
 	bit 0,(ix + Application.cli.program)
 	ret z
 	ld hl,Application_messageProgramming
-	call System_Print
+	call System_PrintLn
 	call Application_CheckProgrammable
 	call Application_FindFile
 	call Application_CheckCapacity
@@ -228,7 +229,7 @@ Application_Verify: PROC
 	bit 0,(ix + Application.cli.verify)
 	ret z
 	ld hl,Application_messageVerifying
-	call System_Print
+	call System_PrintLn
 	call Application_FindFile
 	call Application_CheckCapacity
 	ld a,1
@@ -245,9 +246,9 @@ Application_Verify: PROC
 	call System_PrintCrLf
 	pop af
 	ld hl,Application_messageVerifySuccess
-	jp z,System_Print
+	jp z,System_PrintLn
 	ld hl,Application_messageVerifyFail
-	jp System_Print
+	jp System_PrintLn
 ; b = file handle
 ; de = physical address / 1000H
 ; ix = flash iterator
@@ -302,7 +303,7 @@ Application_Dump: PROC
 	bit 0,(ix + Application.cli.dump)
 	ret z
 	ld hl,Application_messageDumping
-	call System_Print
+	call System_PrintLn
 	call Application_CreateFile
 	ld a,2
 	call DOS_OpenFileHandle
@@ -379,7 +380,7 @@ Application_CheckCapacity: PROC
 	pop ix
 	call Check
 	ld hl,Application_warningCapacity
-	call c,System_Print
+	call c,System_PrintLn
 	pop ix
 	pop de
 	ret
@@ -465,23 +466,23 @@ Application_CreateFile:
 
 ;
 Application_messageWelcome:
-	db "ASCII-X flash tool v1.1 by Grauw",13,10,10,0
+	db "ASCII-X flash tool v1.1 by Grauw",0
 Application_errorFlash:
-	db "FlashROM error.",13,10,0
+	db "FlashROM error.",0
 Application_warningCapacity:
-	db "File exceeds capacity, truncating.",13,10,0
+	db "File exceeds capacity, truncating.",0
 Application_messageErasingChip:
-	db "Erasing chip...",13,10,0
+	db "Erasing chip...",0
 Application_messageProgramming:
-	db "Programming...",13,10,0
+	db "Programming...",0
 Application_messageVerifying:
-	db "Verifying...",13,10,0
+	db "Verifying...",0
 Application_messageDumping:
-	db "Dumping...",13,10,0
+	db "Dumping...",0
 Application_messageVerifySuccess:
-	db "Verification successful.",13,10,0
+	db "Verification successful.",0
 Application_messageVerifyFail:
-	db "Verification failed.",13,10,0
+	db "Verification failed.",0
 
 Application_buffer:
 	ds FlashROM_BLOCK_SIZE

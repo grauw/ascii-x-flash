@@ -145,9 +145,11 @@ FlashROM_SelectSlot:
 FlashROM_Print: PROC
 	push af
 	call FlashROM_PrintQueryingSlot
+	call System_PrintCrLf
 	call FlashROM_IsFlash
 	ld hl,FlashROM_messageNotFlash
-	call nz,System_Print
+	call nz,System_PrintLn
+	call nz,System_PrintCrLf
 	call FlashROM_PrintManufacturerID
 	call FlashROM_PrintDeviceID
 	call System_PrintCrLf
@@ -181,7 +183,7 @@ FlashROM_PrintQueryingSlot:
 	call System_Print
 	call Slot_Print
 	ld hl,FlashROM_messageQuery2
-	call System_Print
+	call System_PrintLn
 	ret
 
 ; ix = this
@@ -268,12 +270,12 @@ FlashROM_PrintContinuity:
 	ld a,(ix + FlashROM.continuity)
 	cp 1
 	ld hl,FlashROM_messageContinuityOk
-	jp z,System_Print
+	jp z,System_PrintLn
 	cp 0
 	ld hl,FlashROM_messageContinuityBad
-	jp z,System_Print
+	jp z,System_PrintLn
 	ld hl,FlashROM_messageContinuityBadStatus
-	jp System_Print
+	jp System_PrintLn
 
 ; Modifies: a
 FlashROM_Reset:
@@ -611,18 +613,18 @@ FlashROM_GetMapperAddress_Test:
 FlashROM_messageQuery:
 	db "Querying slot ",0
 FlashROM_messageQuery2:
-	db " for FlashROM information:",13,10,10,0
+	db " for FlashROM information:",0
 FlashROM_messageNotFlash:
-	db "Warning: Not a FlashROM!",13,10,10,0
+	db "Warning: Not a FlashROM!",0
 FlashROM_messageManufacturerID:
 	db "Manufacturer ID: ",0
 FlashROM_messageDeviceID:
 	db "Device ID: ",0
 FlashROM_messageContinuityOk:
-	db "Continuity check: OK",13,10,0
+	db "Continuity check: OK",0
 FlashROM_messageContinuityBad:
-	db "Continuity check: BAD. Check pins for bridges.",13,10,0
+	db "Continuity check: BAD. Check pins for bridges.",0
 FlashROM_messageContinuityBadStatus:
-	db "Continuity check: BAD status.",13,10,0
+	db "Continuity check: BAD status.",0
 FlashROM_errorOperation:
-	db "Operation failed.",13,10,0
+	db "Operation failed.",0
