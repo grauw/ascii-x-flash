@@ -7,7 +7,7 @@ symbols::load gen/asciixf.com.sym
 
 debug set_bp -once 0xFEDA {} {  # H.STKE
 	lassign [get_selected_slot 3] ram_ps ram_ss
-	variable pc_in_ram_slot "\[pc_in_slot $ram_ps $ram_ss\]"
+	variable pc_in_ram_slot "\[pc_in_slot $ram_ps $ram_ss\] && \[peek 0x100\] == 0x21"
 
 	debug set_bp [symbol System_ThrowExceptionWithMessage] $pc_in_ram_slot
 }
