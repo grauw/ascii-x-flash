@@ -126,57 +126,6 @@ Loop:
 	ENDP
 
 ; ix = this
-CFIQuery_PrintArray: PROC
-	ld a,"C"
-	call System_PrintChar
-	ld a,"F"
-	call System_PrintChar
-	ld a,"I"
-	call System_PrintChar
-	ld b,16
-LoopHeading:
-	push bc
-	ld a," "
-	call System_PrintChar
-	ld a,16
-	sub b
-	call System_PrintHex
-	ld a," "
-	call System_PrintChar
-	pop bc
-	djnz LoopHeading
-	call System_PrintCrLf
-	call CFIQuery_GetData_DE
-	ex de,hl
-	ld b,8
-Loop:
-	push bc
-	ld a,8
-	sub b
-	call System_PrintHex
-	ld a,":"
-	call System_PrintChar
-	ld a," "
-	call System_PrintChar
-	ld b,16
-LoopLine:
-	push bc
-	push hl
-	ld a,(hl)
-	call System_PrintHexA
-	ld a," "
-	call System_PrintChar
-	pop hl
-	pop bc
-	inc hl
-	djnz LoopLine
-	call System_PrintCrLf
-	pop bc
-	djnz Loop
-	ret
-	ENDP
-
-; ix = this
 CFIQuery_Print:
 	ld hl,CFIQuery_message
 	call System_PrintLn

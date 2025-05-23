@@ -127,45 +127,36 @@ CheckLSB:
 ; ix = this
 FlashDevice_Print: PROC
 	push af
-	call FlashDevice_PrintQueryingSlot
-	call System_PrintCrLf
+	call FlashDevice_PrintSlotInfo
+	call FlashDevice_SupportsContinuity
+	call z,FlashDevice_PrintContinuity
+	call FlashDevice_PrintManufacturerID
+	call FlashDevice_PrintDeviceID
+	pop af
+	push ix
+	call PrintCFIQuery
+	pop ix
 	call FlashDevice_IsFlash
 	ld hl,FlashDevice_messageNotFlash
 	call nz,System_PrintLn
-	call nz,System_PrintCrLf
-	call FlashDevice_PrintManufacturerID
-	call FlashDevice_PrintDeviceID
-	call System_PrintCrLf
-	pop af
-	push ix
+	jp System_PrintCrLf
+PrintCFIQuery:
+	ld b,a
 	call FlashDevice_GetCFIQuery
-	call PrintCFI
-	pop ix
-	call System_PrintCrLf
-	call FlashDevice_SupportsContinuity
+	call CFIQuery_HasSignature
 	ret nz
-	call FlashDevice_PrintContinuity
-	call System_PrintCrLf
-	ret
-PrintCFI:
+	ld a,b
 	and a
-	jr nz,Verbose
-	call CFIQuery_PrintDeviceSize
-	call CFIQuery_PrintMaxBufferWrite
-	ret
-Verbose:
-	call CFIQuery_Print
-	call System_PrintCrLf
-	call CFIQuery_PrintArray
-	ret
+	jp nz,CFIQuery_Print
+	jp CFIQuery_PrintDeviceSize
 	ENDP
 
 ; ix = this
-FlashDevice_PrintQueryingSlot:
-	ld hl,FlashDevice_messageQuery
+FlashDevice_PrintSlotInfo:
+	ld hl,FlashDevice_messageSlotInfo
 	call System_Print
 	call Slot_Print
-	ld hl,FlashDevice_messageQuery2
+	ld hl,FlashDevice_messageSlotInfo2
 	call System_PrintLn
 	ret
 
@@ -303,19 +294,19 @@ FlashDevice_ReadBlock:
 	jp ASCII16XMapper_Reset
 
 ;
-FlashDevice_messageQuery:
-	db "Querying slot ",0
-FlashDevice_messageQuery2:
-	db " for FlashROM information:",0
+FlashDevice_messageSlotInfo:
+	db "Slot ",0
+FlashDevice_messageSlotInfo2:
+	db " FlashROM information:",0
 FlashDevice_messageNotFlash:
-	db "Warning: Not a FlashROM!",0
+	db "- Warning: Not a FlashROM!",0
 FlashDevice_messageManufacturerID:
-	db "Manufacturer ID: ",0
+	db "- Manufacturer ID: ",0
 FlashDevice_messageDeviceID:
-	db "Device ID: ",0
+	db "- Device ID: ",0
 FlashDevice_messageContinuityOk:
-	db "Continuity check: OK",0
+	db "- Continuity: OK",0
 FlashDevice_messageContinuityBad:
-	db "Continuity check: BAD. Check pins for bridges.",0
+	db "- Continuity: BAD. Check pins for bridges.",0
 FlashDevice_messageContinuityBadStatus:
-	db "Continuity check: BAD status.",0
+	db "- Continuity: BAD status.",0
