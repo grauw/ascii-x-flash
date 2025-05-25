@@ -253,7 +253,7 @@ Application_Program: PROC
 	call Application_InitAddress
 	ret c
 	call Application_FindFile
-	call Application_CheckCapacity
+	call Application_PrintCapacityWarning
 	ld a,1
 	call DOS_OpenFileHandle
 	call DOS_TerminateIfError
@@ -315,7 +315,7 @@ Application_Verify: PROC
 	call Application_InitAddress
 	ret c
 	call Application_FindFile
-	call Application_CheckCapacity
+	call Application_PrintCapacityWarning
 	ld a,1
 	call DOS_OpenFileHandle
 	call DOS_TerminateIfError
@@ -476,55 +476,25 @@ GetMaxCapacity:
 	ret
 	ENDP
 
-; de = file info block
+; de = physical address / 1000H
 ; ix = this
 ; f <- c: exceeds capacity
-; de <- file info block
+; de <- physical address / 1000H
+; Modifies: a
 Application_CheckCapacity: PROC
 	push de
 	ld de,CheckCapacity
 	call Application_CreateFlashIterator
-	ex (sp),ix
-	ld l,(ix + FileInfoBlock.fileSize + 0)
-	ld h,(ix + FileInfoBlock.fileSize + 1)
-	ld e,(ix + FileInfoBlock.fileSize + 2)
-	ld d,(ix + FileInfoBlock.fileSize + 3)
-	ex (sp),ix
-	push ix
-	call Check
-	ld hl,Application_warningCapacity
-	call c,System_PrintLn
-	pop ix
 	pop de
-	ret
-Check:
-	ld a,l
-	or h
-	or e
-	or d
-	ret z
-	call Dec_DEHL
-	call Sla_DEHL
-	call nc,Sla_DEHL
-	call nc,Sla_DEHL
-	call nc,Sla_DEHL
-	call nc,ArrayIterator_ForEach
-	ret
-Dec_DEHL:
-	ld bc,-1
-	add hl,bc
-	ret c
-	dec de
-	ret
-Sla_DEHL:
-	add hl,hl
-	ex de,hl
-	adc hl,hl
-	ex de,hl
+	push ix
+	call ArrayIterator_ForEach
+	pop ix
 	ret
 ; de = physical address / 1000H
 ; ix = this
-; f <- c: out of range
+; f <- c: exceeds capacity
+; de <- physical address / 1000H
+; Modifies: a
 CheckCapacity:
 	call FlashDevice_CheckCapacity
 	ret nc
@@ -588,6 +558,78 @@ Application_SetFileStart:
 	call DOS_TerminateIfError
 	pop bc
 	ret
+
+; de = file info block
+; ix = this
+; de <- file size / 1000H (rounded up)
+Application_GetFileSize: PROC
+	push ix
+	ld ixl,e
+	ld ixh,d
+	ld l,(ix + FileInfoBlock.fileSize + 0)
+	ld h,(ix + FileInfoBlock.fileSize + 1)
+	ld e,(ix + FileInfoBlock.fileSize + 2)
+	ld d,(ix + FileInfoBlock.fileSize + 3)
+	pop ix
+	ld c,(ix + Application.cli.fileStart + 0)
+	ld b,(ix + Application.cli.fileStart + 1)
+	and a
+	sbc hl,bc
+	ld c,(ix + Application.cli.fileStart + 2)
+	ld b,(ix + Application.cli.fileStart + 3)
+	ex de,hl
+	sbc hl,bc
+	ex de,hl
+	jr c,Zero
+	ld bc,1000H - 1
+	add hl,bc
+	ex de,hl
+	ld bc,0
+	adc hl,bc
+	ex de,hl
+	REPT 4
+	add hl,hl
+	rl e
+	rl d
+	jr c,Cap
+	ENDM
+	ld hl,-ASCII16XMapper_MAX_ADDRESS
+	add hl,de
+	ret nc
+Cap:
+	ld de,ASCII16XMapper_MAX_ADDRESS
+	ret
+Zero:
+	ld de,0
+	ret
+	ENDP
+
+; de = file info block
+; ix = this
+; de <- file info block
+Application_PrintCapacityWarning: PROC
+	push de
+	call CheckCapacity
+	ld hl,Application_warningCapacity
+	call c,System_PrintLn
+	pop de
+	ret
+CheckCapacity:
+	ld a,(ix + Application.cli.addressEnd + 0)
+	or (ix + Application.cli.addressEnd + 1)
+	ret nz
+	call Application_GetFileSize
+	ld a,e
+	or d
+	ret z
+	ld l,(ix + Application.addressStart + 0)
+	ld h,(ix + Application.addressStart + 1)
+	add hl,de
+	ret c
+	ex de,hl
+	dec de
+	jp Application_CheckCapacity
+	ENDP
 
 ;
 Application_messageWelcome:

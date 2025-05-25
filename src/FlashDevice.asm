@@ -135,7 +135,8 @@ FlashDevice_IsProgrammable:
 
 ; de = physical address / 1000H
 ; ix = this
-; f <- c: out of range
+; f <- c: exceeds capacity
+; de <- physical address / 1000H
 ; Modifies: a
 FlashDevice_CheckCapacity: PROC
 	ld a,(ix + FlashDevice.capacity + 1)
