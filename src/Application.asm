@@ -774,7 +774,7 @@ CheckCapacity:
 
 ;
 Application_messageWelcome:
-	db "ASCII-X flash tool v1.1 by Grauw",0
+	db "ASCII-X flash tool v1.2 by Grauw",0
 Application_errorFlash:
 	db "FlashROM error.",0
 Application_warningCapacity:
