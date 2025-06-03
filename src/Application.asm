@@ -664,6 +664,13 @@ Application_SetFileStart:
 ; de = size / 1000H
 ; b <- file handle
 Application_PreAllocateSize:
+	push bc
+	push de
+	ld bc,2103H
+	call Application_CheckNextorVersion
+	pop de
+	pop bc
+	ret c
 	ld a,e
 	or d
 	ret z
@@ -698,6 +705,44 @@ Application_PreAllocateSize:
 	call DOS_MoveFileHandlePointer
 	call DOS_TerminateIfError
 	pop bc
+	ret
+
+; bc = Nextor version (MmrrH = M.m.rr)
+; f <- z: not Nextor or same Nextor, c: older version
+Application_CheckNextorVersion:
+	push bc
+	call Application_GetNextorVersion
+	pop bc
+	ret z
+	sbc hl,bc
+	ret
+
+; f <- z: not Nextor, nc
+; hl <- Nextor version (MmrrH = M.m.rr), 0: not Nextor
+Application_GetNextorVersion:
+	push ix
+	push iy
+	ld b,5AH
+	ld hl,1234H
+	ld de,0ABCDH
+	ld ix,0
+	ld c,_DOSVER
+	call BDOS
+	ex (sp),iy
+	pop de
+	ex (sp),ix
+	pop hl
+	ld a,h
+	and a
+	ret z
+	ex de,hl
+	ld a,e
+	add a,a
+	add a,a
+	add a,a
+	add a,a
+	or h
+	ld h,a
 	ret
 
 ; de = file info block
