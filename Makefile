@@ -15,3 +15,9 @@ dist: all
 
 run: all
 	openmsx -machine Panasonic_FS-A1GT -ext ide -ext slotexpander -ext ASCII16-X_Mapper_XL -ext ASCII16-X_Mapper_XL -script openmsx.tcl
+
+run2: all
+	openmsx -machine Panasonic_FS-A1GT -ext MegaFlashROM_SCC\+_SD -ext slotexpander -ext ASCII16-X_Mapper_XL -ext ASCII16-X_Mapper_XL -script openmsx.tcl
+
+run3: all
+	openmsx -machine Panasonic_FS-A1GT -ext Carnivore2 -ext slotexpander -ext ASCII16-X_Mapper_XL -ext ASCII16-X_Mapper_XL -script openmsx.tcl
