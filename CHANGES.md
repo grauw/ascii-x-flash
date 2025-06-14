@@ -3,6 +3,10 @@
 For the complete list of changes please refer to the
 [revision history](https://hg.sr.ht/~grauw/ascii-x-flash/log).
 
+## [1.2.1] — 2025-06-14
+
+* Worked around Nextor 2.1.2 bug when dumping.
+
 ## [1.2] — 2025-05-25
 
 * Changed `/p` option to erase prior to programming.
