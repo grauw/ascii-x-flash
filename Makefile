@@ -6,7 +6,7 @@ all:
 	java -jar tools/glass.jar -I lib/neonlib/src src/COM.asm bin/asciixf.com gen/asciixf.com.sym
 
 copy: all
-	cp bin/*.com $(COPY_TARGET)/
+	cp bin/asciixf.com $(COPY_TARGET)/
 	diskutil umount $(COPY_TARGET)
 
 dist: all
