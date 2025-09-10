@@ -85,6 +85,12 @@ Set:
 	call Slot_CheckExpanded
 	ld hl,CLI_errorSlotExpansion
 	call nz,System_ThrowExceptionWithMessage
+	call Slot_CheckMainRAM
+	ld hl,CLI_errorMainRAMSlot
+	call z,System_ThrowExceptionWithMessage
+	call Slot_CheckDiskSystem
+	ld hl,CLI_errorDiskSystemSlot
+	call z,System_ThrowExceptionWithMessage
 	pop ix
 	inc (ix + CLI.slotCount)
 	ret
@@ -442,6 +448,10 @@ CLI_errorDumpCombination:
 	db "Can not combine dump with other operations.",0
 CLI_errorSlotExpansion:
 	db "Specified slot expansion incorrect.",0
+CLI_errorMainRAMSlot:
+	db "Specified slot is the main RAM slot.",0
+CLI_errorDiskSystemSlot:
+	db "Specified slot is a disk system slot.",0
 CLI_errorSameSlot:
 	db "Same slot specified multiple times.",0
 CLI_errorTooManySlots:
