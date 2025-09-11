@@ -68,7 +68,7 @@ They can contain a `'` as digit separator.
 
 On macOS and Linux execute the `make` command to build the program. Test by
 putting the MSX-DOS2 system files in the `bin/` directory and executing the
-`make run` command to run the tool. OpenMSX 0.18.0 or later is recommended.
+`make run` command to run the tool. OpenMSX 21.0 or later is recommended.
 
 On Windows, execute the build commands from the Makefile manually.
 
