@@ -3,6 +3,10 @@
 For the complete list of changes please refer to the
 [revision history](https://hg.sr.ht/~grauw/ascii-x-flash/log).
 
+## [1.2.2] — 2025-09-11
+
+* Added checks for disk system and RAM slots.
+
 ## [1.2.1] — 2025-06-14
 
 * Worked around Nextor 2.1.2 bug when dumping.
