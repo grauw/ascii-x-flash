@@ -50,6 +50,7 @@ Advanced options:
   * `/e`  Erase flash ROM.
   * `/ec` Erase flash ROM (chip erase).
   * `/p`  Program flash ROM from file.
+  * `/pb` Program buffer size (2^n). Format: 0-8.
   * `/v`  Verify flash ROM with file.
   * `/d`  Dump flash ROM to file.
   * `/i`  Display flash ROM information.

@@ -21,6 +21,8 @@ CLI: MACRO
 		dw 0
 	addressEnd:
 		dw 0
+	bufferPageMask:
+		db 0FFH
 	slotCount:
 		db 0
 	slots:
@@ -196,8 +198,18 @@ OptionErase:
 	set CLI_FLAG_CHIP,(ix + CLI.flags)
 	jp CLI_ParseNoParameter
 OptionProgram:
+	ld a,(iy)
+	inc iy
+	and 11011111B  ; upper-case
+	cp "B"
+	jr z,OptionProgramBuffer
+	dec iy
 	set CLI_FLAG_PROGRAM,(ix + CLI.flags)
 	jp CLI_ParseNoParameter
+OptionProgramBuffer:
+	call CLI_ParseBufferPageMask
+	ld (ix + CLI.bufferPageMask),a
+	ret
 OptionVerify:
 	set CLI_FLAG_VERIFY,(ix + CLI.flags)
 	jp CLI_ParseNoParameter
@@ -357,6 +369,31 @@ Digit:
 	ENDP
 
 ; ix = this
+; iy = buffer position
+; a <- write buffer page mask
+; iy <- buffer position after size
+CLI_ParseBufferPageMask: PROC
+	ld a,"8"
+	sub (iy)
+	inc iy
+	call c,CLI_ThrowParameter
+	cp 9
+	call nc,CLI_ThrowParameter
+	ld b,a
+	ld a,(iy)
+	cp " " + 1
+	call nc,CLI_ThrowParameter
+	inc b
+	dec b
+	ld a,0FFH
+	ret z
+Loop:
+	srl a
+	djnz Loop
+	ret
+	ENDP
+
+; ix = this
 CLI_TrySetDefaultOperations:
 	ld a,(ix + CLI.path + 0)
 	or (ix + CLI.path + 1)
@@ -502,6 +539,7 @@ CLI_messageAdvancedHelp:
 	db "  /e  Erase flash ROM.",13,10
 	db "  /ec Erase flash ROM (chip erase).",13,10
 	db "  /p  Program flash ROM from file.",13,10
+	db "  /pb Program buffer size (2^n). Format: 0-8.",13,10
 	db "  /v  Verify flash ROM with file.",13,10
 	db "  /d  Dump flash ROM to file.",13,10
 	db "  /i  Display flash ROM information.",13,10

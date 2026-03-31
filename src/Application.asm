@@ -56,6 +56,12 @@ Application_ConstructFlashDevices: PROC
 	push ix
 	call ArrayIterator_ForEach
 	pop ix
+	ld de,LimitBufferPageMask
+	call Application_CreateFlashIterator
+	push ix
+	ld a,(ix + Application.cli.bufferPageMask)
+	call ArrayIterator_ForEach
+	pop ix
 	ret
 ; hl = slots
 ; ix = flash device
@@ -65,6 +71,14 @@ ConstructFlashDevice:
 	call FlashDevice_Construct
 	pop hl
 	inc hl
+	ret
+; a = write buffer page mask
+; ix = flash device
+LimitBufferPageMask:
+	push af
+	and (ix + FlashDevice.bufferPageMask)
+	ld (ix + FlashDevice.bufferPageMask),a
+	pop af
 	ret
 	ENDP
 
