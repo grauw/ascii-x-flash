@@ -259,6 +259,7 @@ FlashDevice_PrintContinuity:
 	jp System_PrintLn
 
 ; ix = this
+; f <- nz: error
 FlashDevice_ChipErase:
 	call SlotDevice_Select
 	di
@@ -268,6 +269,7 @@ FlashDevice_ChipErase:
 
 ; de = destination / 1000H
 ; ix = this
+; f <- nz: error
 FlashDevice_SectorErase:
 	call SlotDevice_Select
 	ex de,hl
@@ -281,6 +283,7 @@ FlashDevice_SectorErase:
 ; de = destination / 1000H
 ; bc = byte count (<= 1000H)
 ; ix = this
+; f <- nz: error
 FlashDevice_ProgramBlock: PROC
 	ld a,b
 	or c

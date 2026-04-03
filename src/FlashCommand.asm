@@ -41,6 +41,7 @@ FlashCommand_AutoSelect:
 	exx
 	ret
 
+; f <- nz: error
 FlashCommand_ChipErase:
 	exx
 	FlashCommand_LoadUnlock_M
@@ -54,6 +55,7 @@ FlashCommand_ChipErase:
 	ret
 
 ; hl = destination
+; f <- nz: error
 FlashCommand_SectorErase:
 	exx
 	FlashCommand_LoadUnlock_M
@@ -69,6 +71,7 @@ FlashCommand_SectorErase:
 ; hl = destination
 ; de = source
 ; bc = byte count
+; f <- nz: error
 FlashCommand_ProgramByteBlock: PROC
 	exx
 	FlashCommand_LoadUnlock_M
@@ -83,6 +86,7 @@ FlashCommand_ProgramByteBlock: PROC
 Loop:
 	call FlashCommand_CheckWait
 	inc hl
+	ret nz
 Program:
 	exx
 	FlashCommand_Unlock_M
@@ -103,6 +107,7 @@ Program:
 ; hl = destination (buffer page aligned)
 ; de = source
 ; bc = byte count (multiple of buffer size)
+; f <- nz: error
 FlashCommand_ProgramBufferBlock: PROC
 	push ix
 	exx
@@ -121,6 +126,7 @@ FlashCommand_ProgramBufferBlock: PROC
 Loop:
 	call FlashCommand_CheckWait
 	inc hl
+	ret nz
 Program:
 	exx
 	FlashCommand_Unlock_M
@@ -167,6 +173,7 @@ FlashCommand_ReadBlock:
 
 ; a = expected value
 ; hl = polling address
+; f <- nz: error
 FlashCommand_CheckWait: PROC
 	REPT 128
 	cp (hl)
@@ -177,11 +184,11 @@ FlashCommand_CheckWait: PROC
 	jr nz,Error
 	pop af
 	cp (hl)
-	ret z
+	ret
 Error:
 	call FlashCommand_Reset
-	ld hl,FlashCommand_errorOperation
-	call System_ThrowExceptionWithMessage
+	pop af
+	ret
 	ENDP
 
 ; hl = polling address
@@ -241,7 +248,3 @@ FlashCommand_ReadExtendedStatus:
 	ei
 	ld a,(4000H)
 	ret
-
-;
-FlashCommand_errorOperation:
-	db "Operation failed.",0

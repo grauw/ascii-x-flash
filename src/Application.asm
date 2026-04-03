@@ -264,7 +264,9 @@ Application_EraseChip: PROC
 	ret
 ; ix = flash device
 ChipErase:
-	equ FlashDevice_ChipErase
+	call FlashDevice_ChipErase
+	call nz,Application_ThrowFlashOperation
+	ret
 	ENDP
 
 ; ix = this
@@ -319,7 +321,13 @@ SectorErase:
 	sbc hl,de
 	call nz,CFIQuery_IsSectorAligned
 	pop ix
-	call z,FlashDevice_SectorErase
+	pop hl
+	pop de
+	ret nz
+	push de
+	push hl
+	call FlashDevice_SectorErase
+	call nz,Application_ThrowFlashOperation
 	pop hl
 	pop de
 	ret
@@ -385,6 +393,7 @@ ProgramBlock:
 	push de
 	push hl
 	call FlashDevice_ProgramBlock
+	call nz,Application_ThrowFlashOperation
 	pop hl
 	pop de
 	pop bc
@@ -856,11 +865,17 @@ CheckCapacity:
 	jp Application_CheckCapacity
 	ENDP
 
+Application_ThrowFlashOperation:
+	ld hl,Application_errorFlashOperation
+	jp System_ThrowExceptionWithMessage
+
 ;
 Application_messageWelcome:
 	db "ASCII-X flash tool v1.2.2 by Grauw",0
 Application_errorFlash:
 	db "FlashROM error.",0
+Application_errorFlashOperation:
+	db 13,10,"Flash operation failed.",0
 Application_warningCapacity:
 	db "Warning: File exceeds capacity.",0
 Application_messageErasing:
