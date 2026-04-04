@@ -28,6 +28,7 @@ FlashDevice: MACRO
 FlashDevice_Construct:
 	call SlotDevice_Construct
 	call SlotDevice_Select
+	call ASCII16XMapper_Reset
 	call FlashDevice_ConstructCFIQuery
 	call FlashDevice_ConstructManufacturerDeviceID
 	call FlashDevice_ConstructContinuity
@@ -277,7 +278,7 @@ FlashDevice_SectorErase:
 	di
 	call FlashCommand_SectorErase
 	ei
-	ret
+	jp ASCII16XMapper_Reset
 
 ; hl = source
 ; de = destination / 1000H
