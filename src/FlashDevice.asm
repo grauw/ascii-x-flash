@@ -298,7 +298,7 @@ FlashDevice_ProgramBlock: PROC
 	jp ASCII16XMapper_Reset
 Program:
 	ld a,c
-	and a
+	and (ix + FlashDevice.bufferPageMask)
 	jp nz,FlashCommand_ProgramByteBlock
 	ld a,(ix + FlashDevice.bufferPageMask)
 	and a
