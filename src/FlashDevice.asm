@@ -140,7 +140,6 @@ FlashDevice_IsProgrammable:
 ; de = physical address / 1000H
 ; ix = this
 ; f <- c: exceeds capacity
-; de <- physical address / 1000H
 ; Modifies: a
 FlashDevice_CheckCapacity: PROC
 	ld a,(ix + FlashDevice.capacity + 1)
@@ -270,8 +269,6 @@ FlashDevice_ChipErase:
 ; de = destination / 1000H
 ; ix = this
 FlashDevice_SectorErase:
-	call FlashDevice_CheckCapacity
-	ret c
 	call SlotDevice_Select
 	ex de,hl
 	call ASCII16XMapper_SelectAddress
@@ -288,8 +285,6 @@ FlashDevice_ProgramBlock: PROC
 	ld a,b
 	or c
 	ret z
-	call FlashDevice_CheckCapacity
-	ret c
 	call SlotDevice_Select
 	ex de,hl
 	call ASCII16XMapper_SelectAddress
@@ -312,22 +307,16 @@ Program:
 ; bc = byte count (<= 1000H)
 ; ix = this
 ; f <- nz: not equal
-FlashDevice_VerifyBlock: PROC
+FlashDevice_VerifyBlock:
 	ld a,b
 	or c
 	ret z
-	call FlashDevice_CheckCapacity
-	jr c,OutOfRange
 	call SlotDevice_Select
 	ex de,hl
 	call ASCII16XMapper_SelectAddress
 	ex de,hl
 	call FlashCommand_VerifyBlock
 	jp ASCII16XMapper_Reset
-OutOfRange:
-	xor a
-	ret
-	ENDP
 
 ; hl = source / 1000H
 ; de = destination

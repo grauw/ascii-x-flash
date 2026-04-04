@@ -307,6 +307,8 @@ Loop:
 ; de = physical address / 1000H
 ; ix = flash device
 SectorErase:
+	call FlashDevice_CheckCapacity
+	ret c
 	push de
 	push hl
 	push ix
@@ -377,6 +379,8 @@ Loop:
 ; bc = byte count (<= 1000H)
 ; ix = flash device
 ProgramBlock:
+	call FlashDevice_CheckCapacity
+	ret c
 	push bc
 	push de
 	push hl
@@ -450,6 +454,8 @@ Loop:
 ; f <- nz: not equal
 VerifyBlock:
 	ret nz
+	call FlashDevice_CheckCapacity
+	jr c,OutOfRange
 	push bc
 	push de
 	push hl
@@ -457,6 +463,9 @@ VerifyBlock:
 	pop hl
 	pop de
 	pop bc
+	ret
+OutOfRange:
+	xor a
 	ret
 	ENDP
 
