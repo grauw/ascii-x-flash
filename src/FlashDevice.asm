@@ -97,6 +97,9 @@ FlashDevice_ConstructBufferPageMask:
 	call FlashDevice_GetCFIQuery
 	call CFIQuery_GetBufferPageMask
 	pop ix
+	ld (ix + FlashDevice.bufferPageMask),0
+	cp 32 - 1
+	ret c
 	ld (ix + FlashDevice.bufferPageMask),a
 	ret
 
@@ -298,9 +301,9 @@ Program:
 	and a
 	jp nz,FlashCommand_ProgramByteBlock
 	ld a,(ix + FlashDevice.bufferPageMask)
-	cp 32 - 1
-	jp nc,FlashCommand_ProgramBufferBlock
-	jp FlashCommand_ProgramByteBlock
+	and a
+	jp z,FlashCommand_ProgramByteBlock
+	jp FlashCommand_ProgramBufferBlock
 	ENDP
 
 ; hl = source
