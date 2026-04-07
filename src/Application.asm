@@ -4,10 +4,6 @@
 Application_MAX_SLOTS: equ 8
 
 Application: MACRO
-	slotRestore1:
-		Slot
-	slotRestore2:
-		Slot
 	addressStart:
 		dw 0
 	addressEnd:
@@ -32,12 +28,6 @@ Application_Construct:
 	ld hl,Application_messageWelcome
 	call System_PrintLn
 	call System_PrintCrLf
-	ld h,40H
-	call Memory_GetSlot
-	ld (ix + Application.slotRestore1.id),a
-	ld h,80H
-	call Memory_GetSlot
-	ld (ix + Application.slotRestore2.id),a
 	push ix
 	call Application_GetCLI
 	call CLI_Construct
@@ -108,12 +98,6 @@ NoMaxCapacity:
 
 ; ix = this
 Application_Destruct:
-	ld h,40H
-	ld a,(ix + Application.slotRestore1.id)
-	call Memory_SetSlot
-	ld h,80H
-	ld a,(ix + Application.slotRestore1.id)
-	call Memory_SetSlot
 	ret
 
 ; ix = this

@@ -31,7 +31,23 @@ RAM_RESIDENT:
 TPA_PAGE1:  ; fake
 	ds 100H
 
-Main:
+Main: PROC
+	ld h,40H
+	call Memory_GetSlot
+	push af
+	ld h,80H
+	call Memory_GetSlot
+	push af
+	ld hl,RunApplication
+	call System_TryCall
+	pop af
+	ld h,80H
+	call Memory_SetSlot
+	pop af
+	ld h,40H
+	call Memory_SetSlot
+	ret
+RunApplication:
 	ld ix,COM_application
 	call Application_Construct
 	push ix
@@ -40,6 +56,7 @@ Main:
 	pop ix
 	call Application_Destruct
 	ret
+	ENDP
 
 ;
 COM_application:
