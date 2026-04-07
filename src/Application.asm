@@ -39,6 +39,10 @@ Application_Construct:
 	pop ix
 	call Application_ConstructFlashDevices
 	call Application_ConstructAddress
+	ld a,(ix + Application.cli.flags)
+	and 1 << CLI_FLAG_PROGRAM | 1 << CLI_FLAG_VERIFY
+	ret z
+	call Application_FindFile
 	ret
 
 ; ix = this
@@ -110,6 +114,16 @@ Application_Destruct:
 Application_GetCLI:
 	ld de,Application.cli
 	add ix,de
+	ret
+
+; ix = this
+; de <- file info block
+Application_GetFileInfoBlock_DE:
+	push ix
+	ld de,Application.fileInfoBlock
+	add ix,de
+	ex (sp),ix
+	pop de
 	ret
 
 ; ix = this
@@ -303,7 +317,7 @@ Application_Program: PROC
 	call Application_CheckProgrammable
 	call Application_InitAddress
 	ret c
-	call Application_FindFile
+	call Application_GetFileInfoBlock_DE
 	call Application_PrintCapacityWarning
 	ld a,1
 	call DOS_OpenFileHandle
@@ -367,7 +381,7 @@ Application_Verify: PROC
 	call System_PrintLn
 	call Application_InitAddress
 	ret c
-	call Application_FindFile
+	call Application_GetFileInfoBlock_DE
 	call Application_PrintCapacityWarning
 	ld a,1
 	call DOS_OpenFileHandle
