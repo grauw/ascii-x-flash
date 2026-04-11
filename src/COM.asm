@@ -1,6 +1,10 @@
 ;
 ;
 ;
+COM_BUFFER: equ 0C000H
+COM_BUFFER_SIZE: equ FlashDevice_BLOCK_SIZE
+COM_STACK_SIZE: equ 200H
+
 	org 100H
 
 TPA_PAGE0:
@@ -32,6 +36,10 @@ TPA_PAGE1:  ; fake
 	ds 100H
 
 Main: PROC
+	ld hl,-(COM_BUFFER + COM_BUFFER_SIZE + COM_STACK_SIZE)
+	add hl,sp
+	ld hl,COM_insufficientTPAError
+	call nc,System_ThrowExceptionWithMessage
 	ld h,40H
 	call Memory_GetSlot
 	push af
@@ -49,7 +57,7 @@ Main: PROC
 	ret
 RunApplication:
 	ld ix,COM_application
-	ld hl,COM_buffer
+	ld hl,COM_BUFFER
 	call Application_Construct
 	push ix
 	ld hl,Application_Run
@@ -60,9 +68,10 @@ RunApplication:
 	ENDP
 
 ;
+COM_insufficientTPAError:
+	db "Insufficient TPA space.",13,10,0
+
 COM_application:
 	Application
-COM_buffer:
-	ds FlashDevice_BLOCK_SIZE
 
 	ENDS
