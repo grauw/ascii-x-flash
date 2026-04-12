@@ -2,6 +2,7 @@
 ; Main application
 ;
 Application_MAX_SLOTS: equ 8
+Application_FLASH_ATTEMPTS: equ 3
 
 Application: MACRO
 	buffer:
@@ -264,9 +265,11 @@ Application_EraseChip: PROC
 	ret
 ; ix = flash device
 ChipErase:
+	REPT Application_FLASH_ATTEMPTS
 	call FlashDevice_ChipErase
-	call nz,Application_ThrowFlashOperation
-	ret
+	ret z
+	ENDM
+	jp Application_ThrowFlashOperation
 	ENDP
 
 ; ix = this
@@ -330,13 +333,15 @@ SectorErase:
 	pop hl
 	pop de
 	ret nz
+	REPT Application_FLASH_ATTEMPTS
 	push de
 	push hl
 	call FlashDevice_SectorErase
-	call nz,Application_ThrowFlashOperation
 	pop hl
 	pop de
-	ret
+	ret z
+	ENDM
+	jp Application_ThrowFlashOperation
 	ENDP
 
 ; ix = this
@@ -405,15 +410,17 @@ Loop:
 ProgramBlock:
 	call FlashDevice_CheckCapacity
 	ret c
+	REPT Application_FLASH_ATTEMPTS
 	push bc
 	push de
 	push hl
 	call FlashDevice_ProgramBlock
-	call nz,Application_ThrowFlashOperation
 	pop hl
 	pop de
 	pop bc
-	ret
+	ret z
+	ENDM
+	jp Application_ThrowFlashOperation
 	ENDP
 
 ; ix = this
