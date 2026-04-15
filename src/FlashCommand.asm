@@ -26,6 +26,16 @@ FlashCommand_Reset:
 	ret
 
 ; Modifies: a
+FlashCommand_AbortReset:
+	ld a,FlashCommand_ADDRESS
+	ld (4000H + FlashCommand_ADDRESS),a
+	ld a,FlashCommand_ADDRESS >> 1
+	ld (4000H + (FlashCommand_ADDRESS >> 1)),a
+	ld a,0F0H
+	ld (4000H + FlashCommand_ADDRESS),a
+	ret
+
+; Modifies: a
 FlashCommand_CFIQuery:
 	ld a,0
 	ld (6000H),a
@@ -197,13 +207,19 @@ FlashCommand_CheckWait: PROC
 	cp (hl)
 	ret
 Error:
+	bit 1,a  ; DQ1 abort
+	jr nz,Abort
 	call FlashCommand_Reset
+	pop af
+	ret
+Abort:
+	call FlashCommand_AbortReset
 	pop af
 	ret
 	ENDP
 
 ; hl = polling address
-; a <- status (DQ6 1: toggling, DQ2 1: toggling)
+; a <- status (DQ6 1: toggling, DQ2 1: toggling, DQ5: error, DQ1: abort)
 ; f <- nz: error
 FlashCommand_WaitDQ6:
 	ld a,(hl)
@@ -211,7 +227,7 @@ FlashCommand_WaitDQ6:
 	xor (hl)
 	bit 6,a        ; DQ6 busy toggle
 	ret z
-	bit 5,a        ; DQ5 error
+	and 00100010B  ; DQ5 error, DQ1 abort
 	jr z,FlashCommand_WaitDQ6
 	ld a,(hl)
 	and 01000100B  ; DQ6 busy toggle, DQ2 erase toggle
