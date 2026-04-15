@@ -268,6 +268,8 @@ ChipErase:
 	REPT Application_FLASH_ATTEMPTS
 	call FlashDevice_ChipErase
 	ret z
+	ld a,"!"
+	call System_PrintChar
 	ENDM
 	jp Application_ThrowFlashOperation
 	ENDP
@@ -340,8 +342,17 @@ SectorErase:
 	pop hl
 	pop de
 	ret z
+	call Error
 	ENDM
 	jp Application_ThrowFlashOperation
+Error:
+	ld a,"!"
+	call System_PrintChar
+	push ix
+	ld ix,COM_application
+	set CLI_FLAG_VERIFY,(ix + Application.cli.flags)
+	pop ix
+	ret
 	ENDP
 
 ; ix = this
@@ -419,8 +430,17 @@ ProgramBlock:
 	pop de
 	pop bc
 	ret z
+	call Error
 	ENDM
 	jp Application_ThrowFlashOperation
+Error:
+	ld a,"!"
+	call System_PrintChar
+	push ix
+	ld ix,COM_application
+	set CLI_FLAG_VERIFY,(ix + Application.cli.flags)
+	pop ix
+	ret
 	ENDP
 
 ; ix = this
