@@ -72,6 +72,7 @@ FlashCommand_SectorErase:
 ; de = source
 ; bc = byte count
 ; f <- nz: error
+; hl, de, bc <- updated
 FlashCommand_ProgramByteBlock: PROC
 	exx
 	FlashCommand_LoadUnlock_M
@@ -82,7 +83,16 @@ FlashCommand_ProgramByteBlock: PROC
 	inc b
 	ld c,b
 	ld b,a
-	jr Program
+	call Program
+	ret z
+	ld a,b
+	ld b,c
+	ld c,a
+	cp 1
+	ret c
+	dec b
+	and a
+	ret
 Loop:
 	call FlashCommand_CheckWait
 	inc hl
@@ -108,6 +118,7 @@ Program:
 ; de = source
 ; bc = byte count (multiple of buffer size)
 ; f <- nz: error
+; hl, de, bc <- updated
 FlashCommand_ProgramBufferBlock: PROC
 	push ix
 	exx
