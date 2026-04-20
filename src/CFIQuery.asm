@@ -73,6 +73,20 @@ CFIQuery_Construct:
 	ld bc,CFIQuery._size
 	jp FlashCommand_ReadParameterBlock
 
+; ix <- AMD query
+; f <- nz: not found
+CFIQuery_GetAMDQuery:
+	ld a,AMDQuery_VENDOR_ID
+	cp (ix + CFIQuery.primaryVendorID + 0)
+	ret nz
+	ld a,AMDQuery_VENDOR_ID >> 8
+	cp (ix + CFIQuery.primaryVendorID + 1)
+	ret nz
+	ld e,(ix + CFIQuery.primaryVendorQuery + 0)
+	ld d,(ix + CFIQuery.primaryVendorQuery + 1)
+	add ix,de
+	jp AMDQuery_HasSignature
+
 ; ix = this
 ; f <- z: QRY signature found
 ; Modifies: a
@@ -185,17 +199,9 @@ CFIQuery_Print:
 	ld hl,CFIQuery_messageNoSignature
 	jp nz,System_PrintLn
 	call CFIQuery_PrintQuery
-	ld l,(ix + CFIQuery.primaryVendorID + 0)
-	ld h,(ix + CFIQuery.primaryVendorID + 1)
-	ld bc,AMDQuery_VENDOR_ID
-	and a
-	sbc hl,bc
-	ret nz
-	ld e,(ix + CFIQuery.primaryVendorQuery + 0)
-	ld d,(ix + CFIQuery.primaryVendorQuery + 1)
 	push ix
-	add ix,de
-	call AMDQuery_PrintQuery
+	call CFIQuery_GetAMDQuery
+	call z,AMDQuery_PrintQuery
 	pop ix
 	ret
 

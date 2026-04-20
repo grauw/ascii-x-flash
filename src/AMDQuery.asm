@@ -67,6 +67,20 @@ AMDQuery: MACRO
 	ENDM
 
 ; ix = this
+; f <- z: PRI signature found
+; Modifies: a
+AMDQuery_HasSignature:
+	ld a,"P"
+	cp (ix + AMDQuery.signature + 0)
+	ret nz
+	ld a,"R"
+	cp (ix + AMDQuery.signature + 1)
+	ret nz
+	ld a,"I"
+	cp (ix + AMDQuery.signature + 2)
+	ret
+
+; ix = this
 AMDQuery_PrintQuery: PROC
 	call AMDQuery_PrintVendorSpecificVersion
 
