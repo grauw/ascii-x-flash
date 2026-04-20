@@ -420,6 +420,7 @@ Loop:
 	ld h,(ix + Application.buffer + 1)
 	ld e,(ix + Application.addressCurrent + 0)
 	ld d,(ix + Application.addressCurrent + 1)
+	xor a
 	call ArrayIterator_ForEach
 	pop ix
 	pop bc
@@ -511,6 +512,7 @@ Application_CheckProgrammable: PROC
 	ld de,IsProgrammable
 	call Application_CreateFlashIterator
 	push ix
+	xor a
 	call ArrayIterator_ForEach
 	ld hl,Application_errorFlash
 	call nz,System_ThrowExceptionWithMessage
@@ -532,6 +534,7 @@ Application_GetMaxCapacity: PROC
 	call Application_CreateFlashIterator
 	push ix
 	ld de,0
+	xor a
 	call ArrayIterator_ForEach
 	pop ix
 	ret
@@ -560,6 +563,7 @@ Application_IsSectorAligned: PROC
 	call Application_CreateFlashIterator
 	pop de
 	push ix
+	xor a
 	call ArrayIterator_ForEach
 	pop ix
 	ret
@@ -597,6 +601,7 @@ Application_CheckCapacity: PROC
 	call Application_CreateFlashIterator
 	pop de
 	push ix
+	scf
 	call ArrayIterator_ForEach
 	pop ix
 	ret
