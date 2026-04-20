@@ -229,7 +229,8 @@ FlashDevice_SectorErase:
 	ex de,hl
 	call ASCII16XMapper_SelectAddress
 	di
-	call FlashCommand_SectorErase
+	call FlashCommand_IsSectorProtected
+	call z,FlashCommand_SectorErase
 	ei
 	jp ASCII16XMapper_Reset
 
@@ -246,7 +247,8 @@ FlashDevice_ProgramBlock: PROC
 	ex de,hl
 	call ASCII16XMapper_SelectAddress
 	di
-	call Program
+	call FlashCommand_IsSectorProtected
+	call z,Program
 	ei
 	jp ASCII16XMapper_Reset
 Program:

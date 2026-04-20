@@ -50,6 +50,17 @@ FlashCommand_AutoSelect:
 	exx
 	ret
 
+; hl = destination
+; f <- nz: protected
+FlashCommand_IsSectorProtected:
+	call FlashCommand_AutoSelect
+	push hl
+	ld l,02H << FlashCommand_X8X16
+	ld a,(hl)
+	and a
+	pop hl
+	jp FlashCommand_Reset
+
 ; f <- nz: error
 FlashCommand_ChipErase:
 	exx
