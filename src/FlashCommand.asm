@@ -6,8 +6,8 @@ FlashCommand_ADDRESS: equ 0AAAH
 ; hl <- Command 1st cycle address
 ; de <- Command 2nd cycle address
 FlashCommand_LoadUnlock_M: MACRO
-	ld hl,4000H + FlashCommand_ADDRESS
-	ld de,4000H + (FlashCommand_ADDRESS >> 1)
+	ld hl,4000H | FlashCommand_ADDRESS
+	ld de,4000H | FlashCommand_ADDRESS >> 1
 	ENDM
 
 ; hl = Command 1st cycle address
@@ -28,11 +28,11 @@ FlashCommand_Reset:
 ; Modifies: a
 FlashCommand_AbortReset:
 	ld a,FlashCommand_ADDRESS
-	ld (4000H + FlashCommand_ADDRESS),a
+	ld (4000H | FlashCommand_ADDRESS),a
 	ld a,FlashCommand_ADDRESS >> 1
-	ld (4000H + (FlashCommand_ADDRESS >> 1)),a
+	ld (4000H | FlashCommand_ADDRESS >> 1),a
 	ld a,0F0H
-	ld (4000H + FlashCommand_ADDRESS),a
+	ld (4000H | FlashCommand_ADDRESS),a
 	ret
 
 ; Modifies: a
@@ -40,7 +40,7 @@ FlashCommand_CFIQuery:
 	ld a,0
 	ld (6000H),a
 	ld a,98H
-	ld (4000H + 0AAH),a
+	ld (4000H | 0AAH),a
 	ret
 
 FlashCommand_AutoSelect:
@@ -243,9 +243,9 @@ FlashCommand_CheckContinuity: PROC
 	pop af
 	ret
 Check:
-	ld hl,6000H + (5554ABH >> 14)
+	ld hl,6000H | 5554ABH >> 14
 	ld (hl),l
-	ld hl,7000H + (2AAB54H >> 14)
+	ld hl,7000H | 2AAB54H >> 14
 	ld (hl),l
 	call FlashCommand_ClearExtendedStatus
 	call FlashCommand_ReadExtendedStatus
@@ -253,9 +253,9 @@ Check:
 	ld a,2
 	ret nz
 	ld a,0FFH
-	ld (4000H + (5554ABH & 3FFFH)),a
+	ld (4000H | 5554ABH & 3FFFH),a
 	ld a,00H
-	ld (8000H + (2AAB54H & 3FFFH)),a
+	ld (8000H | 2AAB54H & 3FFFH),a
 	call FlashCommand_ReadExtendedStatus
 	and 01H
 	ret
@@ -264,14 +264,14 @@ Check:
 ; Modifies: a
 FlashCommand_ClearExtendedStatus:
 	ld a,71H
-	ld (4000H + FlashCommand_ADDRESS),a
+	ld (4000H | FlashCommand_ADDRESS),a
 	ret
 
 ; a <- status
 FlashCommand_ReadExtendedStatus:
 	ld a,70H
 	di
-	ld (4000H + FlashCommand_ADDRESS),a
+	ld (4000H | FlashCommand_ADDRESS),a
 	ei
 	ld a,(4000H)
 	ret

@@ -56,15 +56,15 @@ FlashDevice_ConstructCFIQuery:
 ; ix = this
 FlashDevice_ConstructManufacturerDeviceID: PROC
 	call FlashCommand_AutoSelect
-	ld a,(4000H + 00H)
+	ld a,(4000H | 00H)
 	ld (ix + FlashDevice.manufacturerID),a
-	ld a,(4000H + 02H)
+	ld a,(4000H | 02H)
 	ld (ix + FlashDevice.deviceID + 0),a
 	cp 7EH
 	jp nz,SingleDeviceID
-	ld a,(4000H + 1CH)
+	ld a,(4000H | 1CH)
 	ld (ix + FlashDevice.deviceID + 1),a
-	ld a,(4000H + 1EH)
+	ld a,(4000H | 1EH)
 	ld (ix + FlashDevice.deviceID + 2),a
 	jp FlashCommand_Reset
 SingleDeviceID:
