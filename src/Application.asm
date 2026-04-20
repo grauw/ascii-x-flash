@@ -544,17 +544,19 @@ Application_CheckProgrammable: PROC
 	ld de,IsProgrammable
 	call Application_CreateFlashIterator
 	push ix
-	xor a
+	or -1
 	call ArrayIterator_ForEach
 	ld hl,Application_errorFlash
-	call nz,System_ThrowExceptionWithMessage
+	call z,System_ThrowExceptionWithMessage
 	pop ix
 	ret
 ; ix = flash device
-; f <- nz: not programmable
+; f <- z: not programmable
 IsProgrammable:
+	ret z
+	bit FlashDevice_CAPABILITY_FLASH,(ix + FlashDevice.capabilities)
 	ret nz
-	call FlashDevice_IsProgrammable
+	bit 0,(ix + FlashDevice.continuity)
 	ret
 	ENDP
 

@@ -2,10 +2,13 @@
 ; FlashROM device
 ;
 FlashDevice_BLOCK_SIZE: equ 1000H
+FlashDevice_CAPABILITY_FLASH: equ 0
 
 FlashDevice: MACRO
 	super:
 		SlotDevice
+	capabilities:
+		db 0
 	continuity:
 		db 0
 	capacity:
@@ -27,6 +30,15 @@ FlashDevice_Construct:
 	call ASCII16XMapper_Reset
 	call FlashDevice_ConstructCFIQuery
 	call FlashDevice_ConstructAutoSelect
+	ld a,(ix + FlashDevice.autoSelect.manufacturer)
+	and a
+	ret pe  ; not a valid manufacturer ID
+	push ix
+	call FlashDevice_GetCFIQuery
+	call CFIQuery_HasSignature
+	pop ix
+	ret nz  ; no CFI
+	call FlashDevice_ConstructCapabilities
 	call FlashDevice_ConstructContinuity
 	call FlashDevice_ConstructCapacity
 	call FlashDevice_ConstructBufferPageMask
@@ -53,11 +65,15 @@ FlashDevice_ConstructAutoSelect:
 	jp FlashCommand_Reset
 
 ; ix = this
+FlashDevice_ConstructCapabilities:
+	set FlashDevice_CAPABILITY_FLASH,(ix + FlashDevice.capabilities)
+	ret
+
+; ix = this
 FlashDevice_ConstructContinuity:
-	ld (ix + FlashDevice.continuity),1
 	call FlashDevice_SupportsContinuity
-	ret nz
-	call FlashCommand_CheckContinuity
+	ld a,1
+	call z,FlashCommand_CheckContinuity
 	ld (ix + FlashDevice.continuity),a
 	ret
 
@@ -99,31 +115,6 @@ FlashDevice_GetCFIQuery:
 	add ix,de
 	ret
 
-; ix = this
-; f <- nz: not flash
-FlashDevice_IsFlash: PROC
-	ld a,(ix + FlashDevice.autoSelect.manufacturer)
-	and a
-	jp pe,NotFlash
-	push ix
-	call FlashDevice_GetCFIQuery
-	call CFIQuery_HasSignature
-	pop ix
-	ret
-NotFlash:
-	or 1
-	ret
-	ENDP
-
-; ix = this
-; f <- nz: not programmable
-FlashDevice_IsProgrammable:
-	call FlashDevice_IsFlash
-	ret nz
-	ld a,(ix + FlashDevice.continuity)
-	cp 1
-	ret
-
 ; de = physical address / 1000H
 ; ix = this
 ; f <- c: exceeds capacity
@@ -155,9 +146,9 @@ FlashDevice_Print: PROC
 	push ix
 	call PrintCFIQuery
 	pop ix
-	call FlashDevice_IsFlash
+	bit FlashDevice_CAPABILITY_FLASH,(ix + FlashDevice.capabilities)
 	ld hl,FlashDevice_messageNotFlash
-	call nz,System_PrintLn
+	call z,System_PrintLn
 	jp System_PrintCrLf
 PrintCFIQuery:
 	ld b,a
