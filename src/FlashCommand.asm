@@ -243,9 +243,9 @@ FlashCommand_CheckContinuity: PROC
 	pop af
 	ret
 Check:
-	ld hl,6000H | 5554ABH >> 14
+	ld hl,6000H | 15554ABH >> 14
 	ld (hl),l
-	ld hl,7000H | 2AAB54H >> 14
+	ld hl,7000H | 2AAAB54H >> 14
 	ld (hl),l
 	call FlashCommand_ClearExtendedStatus
 	call FlashCommand_ReadExtendedStatus
@@ -253,9 +253,9 @@ Check:
 	ld a,2
 	ret nz
 	ld a,0FFH
-	ld (4000H | 5554ABH & 3FFFH),a
+	ld (4000H | 15554ABH & 3FFFH),a
 	ld a,00H
-	ld (8000H | 2AAB54H & 3FFFH),a
+	ld (8000H | 2AAAB54H & 3FFFH),a
 	call FlashCommand_ReadExtendedStatus
 	and 01H
 	ret

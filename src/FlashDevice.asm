@@ -218,9 +218,9 @@ FlashDevice_PrintDeviceID:
 	call System_PrintCrLf
 	ret
 
-; Continuity check is only supported by Infineon S29GL064S.
+; Continuity check is only supported by Infineon S29GL064S and S29GL-T devices.
 ; Manufacturer ID: 01
-; Device ID: 7E1000 (04), 7E1001 (03), 7E0C01 (01, 02, V1, V2), 7E1301 (06, 07, V6, V7)
+; Device ID: 7E1000 (04), 7E1001 (03), 7E0C01 (01, 02, V1, V2), 7E1301 (06, 07, V6, V7), 7E2301 (GL512T)
 ; ix = this
 ; f <- z: supported
 FlashDevice_SupportsContinuity: PROC
@@ -234,6 +234,8 @@ FlashDevice_SupportsContinuity: PROC
 	cp 0CH
 	jr z,Check01
 	cp 13H
+	jr z,Check01
+	cp 23H
 	jr z,Check01
 	cp 10H
 	ret nz
