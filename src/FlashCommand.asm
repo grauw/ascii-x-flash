@@ -1,7 +1,8 @@
 ;
 ; FlashROM commands
 ;
-FlashCommand_ADDRESS: equ 0AAAH
+FlashCommand_X8X16: equ 1  ; device interface 0: x8, 1: x8/x16
+FlashCommand_ADDRESS: equ 0555H << FlashCommand_X8X16
 
 ; hl <- Command 1st cycle address
 ; de <- Command 2nd cycle address
@@ -40,7 +41,7 @@ FlashCommand_CFIQuery:
 	ld a,0
 	ld (6000H),a
 	ld a,98H
-	ld (4000H | 0AAH),a
+	ld (4000H | FlashCommand_ADDRESS & 0xFF),a
 	ret
 
 FlashCommand_AutoSelect:
@@ -191,6 +192,17 @@ Loop:
 ; bc = byte count
 FlashCommand_ReadBlock:
 	equ System_FastLDIR
+
+; hl = source
+; de = destination
+; bc = byte count
+FlashCommand_ReadParameterBlock:
+	ldi
+	REPT FlashCommand_X8X16
+	inc hl
+	ENDM
+	jp pe,FlashCommand_ReadParameterBlock
+	ret
 
 ; a = expected value
 ; hl = polling address

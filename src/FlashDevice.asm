@@ -6,8 +6,6 @@ FlashDevice_BLOCK_SIZE: equ 1000H
 FlashDevice: MACRO
 	super:
 		SlotDevice
-	x8x16:
-		db 0
 	manufacturerID:
 		db 0
 	deviceID:
@@ -39,13 +37,6 @@ FlashDevice_Construct:
 ; ix = this
 FlashDevice_ConstructCFIQuery:
 	call FlashCommand_CFIQuery
-	ld a,(4010H)
-	sub "Q"
-	sub 1
-	sbc a,a
-	cpl
-	and 1
-	ld (ix + FlashDevice.x8x16),a
 	ld hl,4000H
 	push ix
 	call FlashDevice_GetCFIQuery
@@ -56,15 +47,15 @@ FlashDevice_ConstructCFIQuery:
 ; ix = this
 FlashDevice_ConstructManufacturerDeviceID: PROC
 	call FlashCommand_AutoSelect
-	ld a,(4000H | 00H)
+	ld a,(4000H | 00H << FlashCommand_X8X16)
 	ld (ix + FlashDevice.manufacturerID),a
-	ld a,(4000H | 02H)
+	ld a,(4000H | 01H << FlashCommand_X8X16)
 	ld (ix + FlashDevice.deviceID + 0),a
 	cp 7EH
 	jp nz,SingleDeviceID
-	ld a,(4000H | 1CH)
+	ld a,(4000H | 0EH << FlashCommand_X8X16)
 	ld (ix + FlashDevice.deviceID + 1),a
-	ld a,(4000H | 1EH)
+	ld a,(4000H | 0FH << FlashCommand_X8X16)
 	ld (ix + FlashDevice.deviceID + 2),a
 	jp FlashCommand_Reset
 SingleDeviceID:

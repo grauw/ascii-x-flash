@@ -66,22 +66,12 @@ CFIQuery: MACRO
 	_size: equ $
 	ENDM
 
-; a = 0: x8, 1: x8/x16
 ; hl = data
 ; ix = this
-CFIQuery_Construct: PROC
+CFIQuery_Construct:
 	call CFIQuery_GetData_DE
 	ld bc,80H
-	and a
-	jr nz,X8X16Loop
-	ldir
-	ret
-X8X16Loop:
-	ldi
-	inc hl
-	jp pe,X8X16Loop
-	ret
-	ENDP
+	jp FlashCommand_ReadParameterBlock
 
 ; ix = this
 ; de <- data
@@ -94,14 +84,14 @@ CFIQuery_GetData_DE:
 ; f <- z: QRY signature found
 ; Modifies: a
 CFIQuery_HasSignature:
-	ld a,(ix + CFIQuery.signature + 0)
-	cp "Q"
+	ld a,"Q"
+	cp (ix + CFIQuery.signature + 0)
 	ret nz
-	ld a,(ix + CFIQuery.signature + 1)
-	cp "R"
+	ld a,"R"
+	cp (ix + CFIQuery.signature + 1)
 	ret nz
-	ld a,(ix + CFIQuery.signature + 2)
-	cp "Y"
+	ld a,"Y"
+	cp (ix + CFIQuery.signature + 2)
 	ret
 
 ; ix = this
