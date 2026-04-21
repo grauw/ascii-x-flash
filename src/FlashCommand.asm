@@ -38,8 +38,6 @@ FlashCommand_AbortReset:
 
 ; Modifies: a
 FlashCommand_CFIQuery:
-	ld a,0
-	ld (6000H),a
 	ld a,98H
 	ld (4000H | FlashCommand_ADDRESS & 0xFF),a
 	ret
