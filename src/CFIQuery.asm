@@ -2,7 +2,6 @@
 ; Common Flash Interface query
 ;
 CFIQuery: MACRO
-	data:
 		ds 10H
 	signature:
 		ds 3
@@ -69,16 +68,10 @@ CFIQuery: MACRO
 ; hl = data
 ; ix = this
 CFIQuery_Construct:
-	call CFIQuery_GetData_DE
-	ld bc,80H
-	jp FlashCommand_ReadParameterBlock
-
-; ix = this
-; de <- data
-CFIQuery_GetData_DE:
 	ld e,ixl
 	ld d,ixh
-	ret
+	ld bc,CFIQuery._size
+	jp FlashCommand_ReadParameterBlock
 
 ; ix = this
 ; f <- z: QRY signature found
@@ -231,103 +224,103 @@ CFIQuery_PrintQuery:
 CFIQuery_PrintVccMin:
 	ld hl,CFIQuery_messageVccMin
 	call System_Print
-	ld a,(ix + CFIQuery.data + CFIQuery.vccMin)
+	ld a,(ix + CFIQuery.vccMin)
 	jp CFIQuery_PrintVoltage
 
 ; ix = this
 CFIQuery_PrintVccMax:
 	ld hl,CFIQuery_messageVccMax
 	call System_Print
-	ld a,(ix + CFIQuery.data + CFIQuery.vccMax)
+	ld a,(ix + CFIQuery.vccMax)
 	jp CFIQuery_PrintVoltage
 
 ; ix = this
 CFIQuery_PrintVppMin:
 	ld hl,CFIQuery_messageVppMin
 	call System_Print
-	ld a,(ix + CFIQuery.data + CFIQuery.vppMin)
+	ld a,(ix + CFIQuery.vppMin)
 	jp CFIQuery_PrintVoltage
 
 ; ix = this
 CFIQuery_PrintVppMax:
 	ld hl,CFIQuery_messageVppMax
 	call System_Print
-	ld a,(ix + CFIQuery.data + CFIQuery.vppMax)
+	ld a,(ix + CFIQuery.vppMax)
 	jp CFIQuery_PrintVoltage
 
 ; ix = this
 CFIQuery_PrintTypicalTimeout:
 	ld hl,CFIQuery_messageTypicalTimeout
 	call System_Print
-	ld a,(ix + CFIQuery.data + CFIQuery.typicalTimeout)
+	ld a,(ix + CFIQuery.typicalTimeout)
 	jp CFIQuery_PrintMicroSeconds
 
 ; ix = this
 CFIQuery_PrintTypicalTimeoutBufferWrite:
 	ld hl,CFIQuery_messageTypicalTimeoutBufferWrite
 	call System_Print
-	ld a,(ix + CFIQuery.data + CFIQuery.typicalTimeoutBufferWrite)
+	ld a,(ix + CFIQuery.typicalTimeoutBufferWrite)
 	jp CFIQuery_PrintMicroSeconds
 
 ; ix = this
 CFIQuery_PrintTypicalTimeoutSectorErase:
 	ld hl,CFIQuery_messageTypicalTimeoutSectorErase
 	call System_Print
-	ld a,(ix + CFIQuery.data + CFIQuery.typicalTimeoutSectorErase)
+	ld a,(ix + CFIQuery.typicalTimeoutSectorErase)
 	jp CFIQuery_PrintMilliSeconds
 
 ; ix = this
 CFIQuery_PrintTypicalTimeoutChipErase:
 	ld hl,CFIQuery_messageTypicalTimeoutChipErase
 	call System_Print
-	ld a,(ix + CFIQuery.data + CFIQuery.typicalTimeoutChipErase)
+	ld a,(ix + CFIQuery.typicalTimeoutChipErase)
 	jp CFIQuery_PrintMilliSeconds
 
 ; ix = this
 CFIQuery_PrintMaxTimeout:
 	ld hl,CFIQuery_messageMaxTimeout
 	call System_Print
-	ld a,(ix + CFIQuery.data + CFIQuery.typicalTimeout)
-	add a,(ix + CFIQuery.data + CFIQuery.maxTimeout)
+	ld a,(ix + CFIQuery.typicalTimeout)
+	add a,(ix + CFIQuery.maxTimeout)
 	jp CFIQuery_PrintMicroSeconds
 
 ; ix = this
 CFIQuery_PrintMaxTimeoutBufferWrite:
 	ld hl,CFIQuery_messageMaxTimeoutBufferWrite
 	call System_Print
-	ld a,(ix + CFIQuery.data + CFIQuery.typicalTimeoutBufferWrite)
-	add a,(ix + CFIQuery.data + CFIQuery.maxTimeoutBufferWrite)
+	ld a,(ix + CFIQuery.typicalTimeoutBufferWrite)
+	add a,(ix + CFIQuery.maxTimeoutBufferWrite)
 	jp CFIQuery_PrintMicroSeconds
 
 ; ix = this
 CFIQuery_PrintMaxTimeoutSectorErase:
 	ld hl,CFIQuery_messageMaxTimeoutSectorErase
 	call System_Print
-	ld a,(ix + CFIQuery.data + CFIQuery.typicalTimeoutSectorErase)
-	add a,(ix + CFIQuery.data + CFIQuery.maxTimeoutSectorErase)
+	ld a,(ix + CFIQuery.typicalTimeoutSectorErase)
+	add a,(ix + CFIQuery.maxTimeoutSectorErase)
 	jp CFIQuery_PrintMilliSeconds
 
 ; ix = this
 CFIQuery_PrintMaxTimeoutChipErase:
 	ld hl,CFIQuery_messageMaxTimeoutChipErase
 	call System_Print
-	ld a,(ix + CFIQuery.data + CFIQuery.typicalTimeoutChipErase)
-	add a,(ix + CFIQuery.data + CFIQuery.maxTimeoutChipErase)
+	ld a,(ix + CFIQuery.typicalTimeoutChipErase)
+	add a,(ix + CFIQuery.maxTimeoutChipErase)
 	jp CFIQuery_PrintMilliSeconds
 
 ; ix = this
 CFIQuery_PrintDeviceSize:
 	ld hl,CFIQuery_messageDeviceSize
 	call System_Print
-	ld a,(ix + CFIQuery.data + CFIQuery.deviceSize)
+	ld a,(ix + CFIQuery.deviceSize)
 	jp CFIQuery_PrintSize
 
 ; ix = this
 CFIQuery_PrintDeviceInterface:
 	ld hl,CFIQuery_messageDeviceInterface
 	call System_Print
-	ld e,(ix + CFIQuery.data + CFIQuery.deviceInterface + 0)
-	ld d,(ix + CFIQuery.data + CFIQuery.deviceInterface + 1)
+	ld e,(ix + CFIQuery.deviceInterface + 0)
+	ld d,(ix + CFIQuery.deviceInterface + 1)
 	and a
 	ld hl,0000H
 	sbc hl,de
@@ -351,15 +344,15 @@ CFIQuery_PrintDeviceInterface:
 CFIQuery_PrintMaxBufferWrite:
 	ld hl,CFIQuery_messageMaxBufferWrite
 	call System_Print
-	ld a,(ix + CFIQuery.data + CFIQuery.maxBufferWrite)
-	; ld d,(ix + CFIQuery.data + 2BH)
+	ld a,(ix + CFIQuery.maxBufferWrite)
+	; ld d,(ix + 2BH)
 	jp CFIQuery_PrintSize
 
 ; ix = this
 CFIQuery_PrintRegionCount:
 	ld hl,CFIQuery_messageRegionCount
 	call System_Print
-	ld a,(ix + CFIQuery.data + CFIQuery.regionCount)
+	ld a,(ix + CFIQuery.regionCount)
 	call System_PrintDecA
 	jp System_PrintCrLf
 
@@ -367,7 +360,7 @@ CFIQuery_PrintRegionCount:
 CFIQuery_PrintRegions: PROC
 	ld a,0
 Loop:
-	cp (ix + CFIQuery.data + CFIQuery.regionCount)
+	cp (ix + CFIQuery.regionCount)
 	ret z
 	cp 4
 	ret z
@@ -383,8 +376,8 @@ Loop:
 	call System_PrintDecA
 	ld hl,CFIQuery_messageRegionSectorCount
 	call System_Print
-	ld l,(ix + CFIQuery.data + CFIQuery.region1SectorCount + 0)
-	ld h,(ix + CFIQuery.data + CFIQuery.region1SectorCount + 1)
+	ld l,(ix + CFIQuery.region1SectorCount + 0)
+	ld h,(ix + CFIQuery.region1SectorCount + 1)
 	inc hl
 	call System_PrintDecHL
 	call System_PrintCrLf
@@ -394,8 +387,8 @@ Loop:
 	ld hl,CFIQuery_messageRegionSectorSize
 	call System_Print
 	ld l,0
-	ld h,(ix + CFIQuery.data + CFIQuery.region1SectorSize + 0)
-	ld e,(ix + CFIQuery.data + CFIQuery.region1SectorSize + 1)
+	ld h,(ix + CFIQuery.region1SectorSize + 0)
+	ld e,(ix + CFIQuery.region1SectorSize + 1)
 	ld d,0
 	call System_PrintDecDEHL
 	ld hl,CFIQuery_messageBytes
