@@ -3,6 +3,8 @@
 ;
 FlashCommand_X8X16: equ 1  ; device interface 0: x8, 1: x8/x16
 FlashCommand_ADDRESS: equ 0555H << FlashCommand_X8X16
+FlashCommand_PROTECT_SET: equ 00H
+FlashCommand_PROTECT_CLEAR: equ 01H
 
 ; hl <- Command 1st cycle address
 ; de <- Command 2nd cycle address
@@ -211,6 +213,20 @@ FlashCommand_ReadParameterBlock:
 	inc hl
 	ENDM
 	jp pe,FlashCommand_ReadParameterBlock
+	ret
+
+; a = 0: protect, 1: unprotect
+; hl = destination
+FlashCommand_SetSectorDynamicProtect:
+	exx
+	FlashCommand_LoadUnlock_M
+	FlashCommand_Unlock_M
+	ld (hl),0E0H
+	exx
+	ld (hl),0A0H
+	ld (hl),a
+	ld (hl),090H
+	ld (hl),000H
 	ret
 
 ; a = expected value

@@ -288,9 +288,15 @@ Application_EraseSector: PROC
 	ld hl,Application_warningEraseAlignment
 	call nz,System_PrintLn
 SkipEndCheck:
+	call Application_ProtectChip
 	ld de,SectorErase
 	call Application_CreateFlashIterator
-	call Loop
+	push ix
+	ld hl,Loop
+	call System_TryCall
+	pop ix
+	call Application_UnprotectChip
+	call System_Rethrow
 	call System_PrintCrLf
 	ret
 ; ix = flash iterator
@@ -347,9 +353,19 @@ Application_Program: PROC
 	call DOS_OpenFileHandle
 	call DOS_TerminateIfError
 	call Application_SetFileStart
+	push bc
+	call Application_ProtectChip
+	pop bc
 	ld de,ProgramBlock
 	call Application_CreateFlashIterator
-	call Loop
+	push bc
+	push ix
+	ld hl,Loop
+	call System_TryCall
+	pop ix
+	call Application_UnprotectChip
+	pop bc
+	call System_Rethrow
 	call DOS_CloseFileHandle
 	call DOS_TerminateIfError
 	call System_PrintCrLf
@@ -538,6 +554,24 @@ ReadBlock:
 	pop bc
 	ret
 	ENDP
+
+; ix = this
+Application_ProtectChip:
+	ld de,FlashDevice_ProtectChip
+	call Application_CreateFlashIterator
+	push ix
+	call ArrayIterator_ForEach
+	pop ix
+	ret
+
+; ix = this
+Application_UnprotectChip:
+	ld de,FlashDevice_UnprotectChip
+	call Application_CreateFlashIterator
+	push ix
+	call ArrayIterator_ForEach
+	pop ix
+	ret
 
 ; ix = this
 Application_CheckProgrammable: PROC

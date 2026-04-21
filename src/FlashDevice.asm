@@ -3,6 +3,7 @@
 ;
 FlashDevice_BLOCK_SIZE: equ 1000H
 FlashDevice_CAPABILITY_FLASH: equ 0
+FlashDevice_CAPABILITY_PROTECT: equ 1
 
 FlashDevice: MACRO
 	super:
@@ -65,9 +66,22 @@ FlashDevice_ConstructAutoSelect:
 	jp FlashCommand_Reset
 
 ; ix = this
-FlashDevice_ConstructCapabilities:
+FlashDevice_ConstructCapabilities: PROC
 	set FlashDevice_CAPABILITY_FLASH,(ix + FlashDevice.capabilities)
+	call Protect
 	ret
+Protect:
+	push ix
+	call FlashDevice_GetCFIQuery
+	call CFIQuery_GetAMDQuery
+	ld a,(ix + AMDQuery.sectorProtectScheme)
+	pop ix
+	ret nz
+	cp 8
+	ret nz
+	set FlashDevice_CAPABILITY_PROTECT,(ix + FlashDevice.capabilities)
+	ret
+	ENDP
 
 ; ix = this
 FlashDevice_ConstructContinuity:
@@ -229,8 +243,11 @@ FlashDevice_SectorErase:
 	ex de,hl
 	call ASCII16XMapper_SelectAddress
 	di
+	call FlashDevice_UnprotectSector
 	call FlashCommand_IsSectorProtected
 	call z,FlashCommand_SectorErase
+	call z,FlashCommand_IsSectorProtected
+	call z,FlashDevice_ProtectSector
 	ei
 	jp ASCII16XMapper_Reset
 
@@ -247,8 +264,13 @@ FlashDevice_ProgramBlock: PROC
 	ex de,hl
 	call ASCII16XMapper_SelectAddress
 	di
+	call FlashDevice_UnprotectSector
 	call FlashCommand_IsSectorProtected
 	call z,Program
+	dec hl
+	call z,FlashCommand_IsSectorProtected
+	call z,FlashDevice_ProtectSector
+	inc hl
 	ei
 	jp ASCII16XMapper_Reset
 Program:
@@ -289,6 +311,64 @@ FlashDevice_ReadBlock:
 	call ASCII16XMapper_SelectAddress
 	call FlashCommand_ReadBlock
 	jp ASCII16XMapper_Reset
+
+; ix = this
+FlashDevice_ProtectChip:
+	ld a,FlashCommand_PROTECT_SET
+	jr FlashDevice_SetChipProtect
+
+; ix = this
+FlashDevice_UnprotectChip:
+	ld a,FlashCommand_PROTECT_CLEAR
+	jr FlashDevice_SetChipProtect
+
+; a = 0: protect, 1: unprotect
+; ix = this
+FlashDevice_SetChipProtect:
+	bit FlashDevice_CAPABILITY_PROTECT,(ix + FlashDevice.capabilities)
+	ret z
+	call SlotDevice_Select
+	ld l,(ix + FlashDevice.capacity + 0)
+	ld h,(ix + FlashDevice.capacity + 1)
+	ld bc,-1
+	call Loop
+	jp ASCII16XMapper_Reset
+Loop:
+	add hl,bc
+	ret nc
+	push hl
+	push af
+	call ASCII16XMapper_SelectAddress
+	pop af
+	di
+	call FlashCommand_SetSectorDynamicProtect
+	ei
+	pop hl
+	jr Loop
+
+; hl = destination
+; ix = this
+; f <- z: set
+; Modifies: a
+FlashDevice_ProtectSector:
+	bit FlashDevice_CAPABILITY_PROTECT,(ix + FlashDevice.capabilities)
+	ret z
+	ld a,FlashCommand_PROTECT_SET
+	call FlashCommand_SetSectorDynamicProtect
+	xor a
+	ret
+
+; hl = destination
+; ix = this
+; f <- z: set
+; Modifies: a
+FlashDevice_UnprotectSector:
+	bit FlashDevice_CAPABILITY_PROTECT,(ix + FlashDevice.capabilities)
+	ret z
+	ld a,FlashCommand_PROTECT_CLEAR
+	call FlashCommand_SetSectorDynamicProtect
+	xor a
+	ret
 
 ;
 FlashDevice_messageSlotInfo:
