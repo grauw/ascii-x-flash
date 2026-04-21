@@ -27,6 +27,7 @@ TPA_PAGE0:
 	INCLUDE "FlashDevice.asm"
 	INCLUDE "FlashCommand.asm"
 	INCLUDE "ArrayIterator.asm"
+	INCLUDE "AutoSelect.asm"
 	INCLUDE "CFIQuery.asm"
 	INCLUDE "AMDQuery.asm"
 

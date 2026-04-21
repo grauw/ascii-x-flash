@@ -6,16 +6,14 @@ FlashDevice_BLOCK_SIZE: equ 1000H
 FlashDevice: MACRO
 	super:
 		SlotDevice
-	manufacturerID:
-		db 0
-	deviceID:
-		db 0,0,0
 	continuity:
 		db 0
 	capacity:
 		dw 0
 	bufferPageMask:
 		db 0
+	autoSelect:
+		AutoSelect
 	cfiQuery:
 		CFIQuery
 	_size:
@@ -28,7 +26,7 @@ FlashDevice_Construct:
 	call SlotDevice_Select
 	call ASCII16XMapper_Reset
 	call FlashDevice_ConstructCFIQuery
-	call FlashDevice_ConstructManufacturerDeviceID
+	call FlashDevice_ConstructAutoSelect
 	call FlashDevice_ConstructContinuity
 	call FlashDevice_ConstructCapacity
 	call FlashDevice_ConstructBufferPageMask
@@ -45,24 +43,14 @@ FlashDevice_ConstructCFIQuery:
 	jp FlashCommand_Reset
 
 ; ix = this
-FlashDevice_ConstructManufacturerDeviceID: PROC
+FlashDevice_ConstructAutoSelect:
 	call FlashCommand_AutoSelect
-	ld a,(4000H | 00H << FlashCommand_X8X16)
-	ld (ix + FlashDevice.manufacturerID),a
-	ld a,(4000H | 01H << FlashCommand_X8X16)
-	ld (ix + FlashDevice.deviceID + 0),a
-	cp 7EH
-	jp nz,SingleDeviceID
-	ld a,(4000H | 0EH << FlashCommand_X8X16)
-	ld (ix + FlashDevice.deviceID + 1),a
-	ld a,(4000H | 0FH << FlashCommand_X8X16)
-	ld (ix + FlashDevice.deviceID + 2),a
+	ld hl,4000H
+	push ix
+	call FlashDevice_GetAutoSelect
+	call AutoSelect_Construct
+	pop ix
 	jp FlashCommand_Reset
-SingleDeviceID:
-	ld (ix + FlashDevice.deviceID + 1),0
-	ld (ix + FlashDevice.deviceID + 2),0
-	jp FlashCommand_Reset
-	ENDP
 
 ; ix = this
 FlashDevice_ConstructContinuity:
@@ -96,6 +84,14 @@ FlashDevice_ConstructBufferPageMask:
 	ret
 
 ; ix = this
+; ix <- auto select
+; Modifies: de
+FlashDevice_GetAutoSelect:
+	ld de,FlashDevice.autoSelect
+	add ix,de
+	ret
+
+; ix = this
 ; ix <- CFIQuery
 ; Modifies: de
 FlashDevice_GetCFIQuery:
@@ -106,7 +102,7 @@ FlashDevice_GetCFIQuery:
 ; ix = this
 ; f <- nz: not flash
 FlashDevice_IsFlash: PROC
-	ld a,(ix + FlashDevice.manufacturerID)
+	ld a,(ix + FlashDevice.autoSelect.manufacturer)
 	and a
 	jp pe,NotFlash
 	push ix
@@ -151,8 +147,10 @@ FlashDevice_Print: PROC
 	call FlashDevice_PrintSlotInfo
 	call FlashDevice_SupportsContinuity
 	call z,FlashDevice_PrintContinuity
-	call FlashDevice_PrintManufacturerID
-	call FlashDevice_PrintDeviceID
+	push ix
+	call FlashDevice_GetAutoSelect
+	call AutoSelect_Print
+	pop ix
 	pop af
 	push ix
 	call PrintCFIQuery
@@ -181,47 +179,19 @@ FlashDevice_PrintSlotInfo:
 	call System_PrintLn
 	ret
 
-; ix = this
-FlashDevice_PrintManufacturerID:
-	ld hl,FlashDevice_messageManufacturerID
-	call System_Print
-	ld a,(ix + FlashDevice.manufacturerID)
-	call System_PrintHexA
-	call System_PrintCrLf
-	ret
-
-; ix = this
-FlashDevice_PrintDeviceID:
-	ld hl,FlashDevice_messageDeviceID
-	call System_Print
-	ld a,(ix + FlashDevice.deviceID + 0)
-	call System_PrintHexA
-	cp 7EH
-	jp nz,System_PrintCrLf
-	ld a," "
-	call System_PrintChar
-	ld a,(ix + FlashDevice.deviceID + 1)
-	call System_PrintHexA
-	ld a," "
-	call System_PrintChar
-	ld a,(ix + FlashDevice.deviceID + 2)
-	call System_PrintHexA
-	call System_PrintCrLf
-	ret
-
 ; Continuity check is only supported by Infineon S29GL064S and S29GL-T devices.
 ; Manufacturer ID: 01
 ; Device ID: 7E1000 (04), 7E1001 (03), 7E0C01 (01, 02, V1, V2), 7E1301 (06, 07, V6, V7), 7E2301 (GL512T)
 ; ix = this
 ; f <- z: supported
 FlashDevice_SupportsContinuity: PROC
-	ld a,(ix + FlashDevice.manufacturerID)
+	ld a,(ix + FlashDevice.autoSelect.manufacturer)
 	cp 01H
 	ret nz
-	ld a,(ix + FlashDevice.deviceID + 0)
+	ld a,(ix + FlashDevice.autoSelect.device1)
 	cp 7EH
 	ret nz
-	ld a,(ix + FlashDevice.deviceID + 1)
+	ld a,(ix + FlashDevice.autoSelect.device2)
 	cp 0CH
 	jr z,Check01
 	cp 13H
@@ -230,11 +200,11 @@ FlashDevice_SupportsContinuity: PROC
 	jr z,Check01
 	cp 10H
 	ret nz
-	ld a,(ix + FlashDevice.deviceID + 2)
+	ld a,(ix + FlashDevice.autoSelect.device3)
 	cp 00H
 	ret z
 Check01:
-	ld a,(ix + FlashDevice.deviceID + 2)
+	ld a,(ix + FlashDevice.autoSelect.device3)
 	cp 01H
 	ret
 	ENDP
@@ -334,10 +304,6 @@ FlashDevice_messageSlotInfo2:
 	db " FlashROM information:",0
 FlashDevice_messageNotFlash:
 	db "- Warning: Not a FlashROM!",0
-FlashDevice_messageManufacturerID:
-	db "- Manufacturer ID: ",0
-FlashDevice_messageDeviceID:
-	db "- Device ID: ",0
 FlashDevice_messageContinuityOk:
 	db "- Continuity: OK",0
 FlashDevice_messageContinuityBad:
