@@ -397,6 +397,7 @@ Application_Verify: PROC
 ; b = file handle
 ; ix = this
 ; iy = flash iterator
+; f <- nz: not equal
 Loop:
 	push bc
 	ld de,Application_buffer
