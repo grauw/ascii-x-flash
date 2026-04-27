@@ -435,6 +435,7 @@ Loop:
 ; ix = flash device
 ; f <- nz: not equal
 VerifyBlock:
+	ret nz
 	push bc
 	push de
 	push hl
@@ -442,8 +443,7 @@ VerifyBlock:
 	pop hl
 	pop de
 	pop bc
-	ret z
-	jp ArrayIterator_ForEach.Break
+	ret
 	ENDP
 
 ; ix = this
@@ -521,9 +521,9 @@ Application_CheckProgrammable: PROC
 ; ix = flash device
 ; f <- nz: not programmable
 IsProgrammable:
+	ret nz
 	call FlashDevice_IsProgrammable
-	ret z
-	jp ArrayIterator_ForEach.Break
+	ret
 	ENDP
 
 ; ix = this
@@ -572,6 +572,7 @@ Application_IsSectorAligned: PROC
 ; f <- z: aligned or above capacity, nz: not aligned
 ; de <- physical address / 1000H
 IsSectorAligned:
+	ret nz
 	ld l,(ix + FlashDevice.capacity + 0)
 	ld h,(ix + FlashDevice.capacity + 1)
 	scf
@@ -583,8 +584,7 @@ IsSectorAligned:
 	pop de
 	call CFIQuery_IsSectorAligned
 	pop ix
-	ret z
-	jp ArrayIterator_ForEach.Break
+	ret
 AboveCapacity:
 	xor a
 	ret
