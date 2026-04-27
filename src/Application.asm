@@ -195,7 +195,6 @@ Application_NextAddress:
 	inc de
 	ld (ix + Application.addressCurrent + 0),e
 	ld (ix + Application.addressCurrent + 1),d
-	call Application_PrintProgress
 	ld l,(ix + Application.addressEnd + 0)
 	ld h,(ix + Application.addressEnd + 1)
 	scf
@@ -314,6 +313,7 @@ Loop:
 	call ArrayIterator_ForEach
 	pop ix
 	call Application_NextAddress
+	call Application_PrintProgress
 	jr nc,Loop
 	ret
 ; hl = start address / 1000H
@@ -412,6 +412,7 @@ Loop:
 	pop ix
 	pop bc
 	call Application_NextAddress
+	call Application_PrintProgress
 	jr nc,Loop
 	ret
 ; hl = source
@@ -496,6 +497,7 @@ Loop:
 	pop bc
 	ret nz
 	call Application_NextAddress
+	call Application_PrintProgress
 	jr nc,Loop
 	xor a
 	ret
@@ -565,6 +567,7 @@ Loop:
 	call DOS_TerminateIfError
 	pop bc
 	call Application_NextAddress
+	call Application_PrintProgress
 	jr nc,Loop
 	ret
 ; hl = source / 1000H
@@ -711,14 +714,16 @@ CheckCapacity:
 	jp ArrayIterator_ForEach.Break
 	ENDP
 
-; de = address
-; Modifies: af
+; ix = this
+; Modifies: none
 Application_PrintProgress:
-	ld a,0FH
-	and e
-	ret nz
+	push af
+	ld a,(ix + Application.addressCurrent + 0)
+	and 0FH
 	ld a,"."
-	jp System_PrintChar
+	call z,System_PrintChar
+	pop af
+	ret
 
 ; ix = this
 ; de <- file info block
