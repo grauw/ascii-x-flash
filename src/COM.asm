@@ -49,6 +49,7 @@ Main: PROC
 	ret
 RunApplication:
 	ld ix,COM_application
+	ld hl,COM_buffer
 	call Application_Construct
 	push ix
 	ld hl,Application_Run
@@ -61,5 +62,7 @@ RunApplication:
 ;
 COM_application:
 	Application
+COM_buffer:
+	ds FlashDevice_BLOCK_SIZE
 
 	ENDS

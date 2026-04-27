@@ -4,6 +4,8 @@
 Application_MAX_SLOTS: equ 8
 
 Application: MACRO
+	buffer:
+		dw 0
 	addressStart:
 		dw 0
 	addressEnd:
@@ -23,8 +25,11 @@ Application: MACRO
 		ArrayIterator Application_MAX_SLOTS
 	ENDM
 
+; hl = buffer
 ; ix = this
 Application_Construct:
+	ld (ix + Application.buffer + 0),l
+	ld (ix + Application.buffer + 1),h
 	ld hl,Application_messageWelcome
 	call System_PrintLn
 	call System_PrintCrLf
@@ -317,7 +322,8 @@ Application_Program: PROC
 ; iy = flash iterator
 Loop:
 	push bc
-	ld de,Application_buffer
+	ld e,(ix + Application.buffer + 0)
+	ld d,(ix + Application.buffer + 1)
 	ld hl,FlashDevice_BLOCK_SIZE
 	call DOS_ReadFromFileHandle
 	pop bc
@@ -328,9 +334,10 @@ Loop:
 	push ix
 	ld c,l
 	ld b,h
+	ld l,(ix + Application.buffer + 0)
+	ld h,(ix + Application.buffer + 1)
 	ld e,(ix + Application.addressCurrent + 0)
 	ld d,(ix + Application.addressCurrent + 1)
-	ld hl,Application_buffer
 	call ArrayIterator_ForEach
 	pop ix
 	pop bc
@@ -384,7 +391,8 @@ Application_Verify: PROC
 ; f <- nz: not equal
 Loop:
 	push bc
-	ld de,Application_buffer
+	ld e,(ix + Application.buffer + 0)
+	ld d,(ix + Application.buffer + 1)
 	ld hl,FlashDevice_BLOCK_SIZE
 	call DOS_ReadFromFileHandle
 	pop bc
@@ -395,9 +403,10 @@ Loop:
 	push ix
 	ld c,l
 	ld b,h
+	ld l,(ix + Application.buffer + 0)
+	ld h,(ix + Application.buffer + 1)
 	ld e,(ix + Application.addressCurrent + 0)
 	ld d,(ix + Application.addressCurrent + 1)
-	ld hl,Application_buffer
 	call ArrayIterator_ForEach
 	pop ix
 	pop bc
@@ -453,13 +462,15 @@ Loop:
 	push ix
 	ld l,(ix + Application.addressCurrent + 0)
 	ld h,(ix + Application.addressCurrent + 1)
+	ld e,(ix + Application.buffer + 0)
+	ld d,(ix + Application.buffer + 1)
 	ld bc,FlashDevice_BLOCK_SIZE
-	ld de,Application_buffer
 	call ArrayIterator_ForEach
 	pop ix
 	pop bc
 	push bc
-	ld de,Application_buffer
+	ld e,(ix + Application.buffer + 0)
+	ld d,(ix + Application.buffer + 1)
 	ld hl,FlashDevice_BLOCK_SIZE
 	call DOS_WriteToFileHandle
 	call DOS_TerminateIfError
@@ -647,6 +658,7 @@ Application_SetFileStart:
 
 ; b = file handle
 ; de = size / 1000H
+; ix = this
 ; b <- file handle
 Application_PreAllocateSize:
 	push bc
@@ -676,8 +688,9 @@ Application_PreAllocateSize:
 	call DOS_TerminateIfError
 	pop bc
 	ld a,0FFH
-	ld (Application_buffer),a
-	ld de,Application_buffer
+	ld e,(ix + Application.buffer + 0)
+	ld d,(ix + Application.buffer + 1)
+	ld (de),a
 	ld hl,1
 	push bc
 	call DOS_WriteToFileHandle
@@ -825,6 +838,3 @@ Application_messageVerifySuccess:
 	db "Verification successful.",0
 Application_messageVerifyFail:
 	db "Verification failed.",0
-
-Application_buffer:
-	ds FlashDevice_BLOCK_SIZE
