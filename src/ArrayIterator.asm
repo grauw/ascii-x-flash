@@ -47,7 +47,7 @@ Done:
 ArrayIterator_ForEach: PROC
 	jp iy
 Break:
-	ex (sp),iy
-	pop iy
+	inc sp
+	inc sp
 	ret
 	ENDP
