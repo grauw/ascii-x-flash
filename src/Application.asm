@@ -198,6 +198,7 @@ Application_Run:
 	bit CLI_FLAG_HELP,(ix + Application.cli.flags)
 	jp nz,CLI_PrintAdvancedHelp
 	call Application_PrintInfo
+	call Application_PrintCapacityWarning
 	call Application_Erase
 	call Application_Program
 	call Application_Verify
@@ -318,7 +319,6 @@ Application_Program: PROC
 	call Application_InitAddress
 	ret c
 	call Application_GetFileInfoBlock_DE
-	call Application_PrintCapacityWarning
 	ld a,1
 	call DOS_OpenFileHandle
 	call DOS_TerminateIfError
@@ -382,7 +382,6 @@ Application_Verify: PROC
 	call Application_InitAddress
 	ret c
 	call Application_GetFileInfoBlock_DE
-	call Application_PrintCapacityWarning
 	ld a,1
 	call DOS_OpenFileHandle
 	call DOS_TerminateIfError
@@ -802,15 +801,15 @@ Zero:
 	ret
 	ENDP
 
-; de = file info block
 ; ix = this
-; de <- file info block
 Application_PrintCapacityWarning: PROC
-	push de
+	ld a,(ix + Application.cli.flags)
+	and 1 << CLI_FLAG_PROGRAM | 1 << CLI_FLAG_VERIFY
+	ret z
+	call Application_GetFileInfoBlock_DE
 	call CheckCapacity
 	ld hl,Application_warningCapacity
 	call c,System_PrintLn
-	pop de
 	ret
 CheckCapacity:
 	ld a,(ix + Application.cli.addressEnd + 0)
@@ -835,7 +834,7 @@ Application_messageWelcome:
 Application_errorFlash:
 	db "FlashROM error.",0
 Application_warningCapacity:
-	db "File exceeds capacity, truncating.",0
+	db "Warning: File exceeds capacity.",0
 Application_messageErasing:
 	db "Erasing...",0
 Application_messageErasingChip:
