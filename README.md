@@ -49,8 +49,7 @@ Advanced options:
           Specify up to 8 for bulk flashing.
   * `/e`  Erase flash ROM.
   * `/ec` Erase flash ROM (chip erase).
-  * `/p`  Program flash ROM from file. Erase first.
-  * `/p!` Program flash ROM from file. No erase.
+  * `/p`  Program flash ROM from file.
   * `/v`  Verify flash ROM with file.
   * `/d`  Dump flash ROM to file.
   * `/i`  Display flash ROM information.
