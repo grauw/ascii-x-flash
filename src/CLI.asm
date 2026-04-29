@@ -134,13 +134,13 @@ Path:
 ; iy = buffer position
 ; iy <- buffer position after path
 CLI_ParsePath: PROC
-	ld a,(ix + CLI.path)
+	ld a,(ix + CLI.path + 0)
 	or (ix + CLI.path + 1)
 	ld hl,CLI_errorMoreFiles
 	call nz,System_ThrowExceptionWithMessage
 	ld e,iyl
 	ld d,iyh
-	ld (ix + CLI.path),e
+	ld (ix + CLI.path + 0),e
 	ld (ix + CLI.path + 1),d
 Loop:
 	ld a,(iy)
