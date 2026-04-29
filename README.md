@@ -35,13 +35,11 @@ Usage:
 Options:
 
   * `/s`  Slot number (required). Format: p or p-s.
-  * `/p`  Program flash ROM from file. Erase first.
-  * `/v`  Verify flash ROM with file.
   * `/h`  Show advanced options.
 
 Example:
 
-    asciixf /s2 /p /v example.rom
+    asciixf /s2 example.rom
 
 This erases, programs and verifies a ROM to the ASCII-X cartridge in slot 2.
 

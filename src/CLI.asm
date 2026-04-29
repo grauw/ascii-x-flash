@@ -41,6 +41,7 @@ CLI_Construct:
 	call DOS_GetEnvironmentItem
 	call nz,System_ThrowException
 	call CLI_Parse
+	call CLI_TrySetDefaultOperations
 	call CLI_Verify
 	ret
 
@@ -362,6 +363,18 @@ Digit:
 	ENDP
 
 ; ix = this
+CLI_TrySetDefaultOperations:
+	ld a,(ix + CLI.path + 0)
+	or (ix + CLI.path + 1)
+	ret z
+	ld a,(ix + CLI.flags)
+	and a
+	ret nz
+	or 1 << CLI_FLAG_ERASE | 1 << CLI_FLAG_PROGRAM | 1 << CLI_FLAG_VERIFY
+	ld (ix + CLI.flags),a
+	ret
+
+; ix = this
 CLI_Verify:
 	call CLI_VerifyCombinations
 	call CLI_VerifySlots
@@ -480,13 +493,11 @@ CLI_messageBasicHelp:
 	db "Options:",13,10
 	db 13,10
 	db "  /s  Slot number (required). Format: p or p-s.",13,10
-	db "  /p  Program flash ROM from file. Erase first.",13,10
-	db "  /v  Verify flash ROM with file.",13,10
 	db "  /h  Show advanced options.",13,10
 	db 13,10
 	db "Example:",13,10
 	db 13,10
-	db "  asciixf /s2 /p /v example.rom",0
+	db "  asciixf /s2 example.rom",0
 CLI_messageAdvancedHelp:
 	db "Usage: asciixf [options] [<file.rom>]",13,10
 	db 13,10
@@ -511,4 +522,4 @@ CLI_messageAdvancedHelp:
 	db 13,10
 	db "Example:",13,10
 	db 13,10
-	db "  asciixf /s2 /p /v example.rom",0
+	db "  asciixf /s2 /e /p /v example.rom",0
