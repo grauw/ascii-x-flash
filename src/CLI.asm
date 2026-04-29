@@ -395,15 +395,23 @@ CLI_VerifySlots:
 	ret
 
 ; ix = this
-CLI_VerifyPath:
+CLI_VerifyPath: PROC
 	ld a,(ix + CLI.flags)
 	and 1 << CLI_FLAG_PROGRAM | 1 << CLI_FLAG_VERIFY | 1 << CLI_FLAG_DUMP
-	ret z
+	jr z,NoFileOperation
 	ld a,(ix + CLI.path + 0)
 	or (ix + CLI.path + 1)
 	ld hl,CLI_errorNoFile
 	call z,System_ThrowExceptionWithMessage
 	ret
+NoFileOperation:
+	ld a,(ix + CLI.path + 0)
+	or (ix + CLI.path + 1)
+	ret z
+	ld hl,CLI_errorNoFileOperation
+	call nz,System_ThrowExceptionWithMessage
+	ret
+	ENDP
 
 ; ix = this
 CLI_VerifyAddress:
@@ -462,6 +470,8 @@ CLI_errorMoreFiles:
 	db "Can not specify more than one file.",0
 CLI_errorNoFile:
 	db "No file specified.",0
+CLI_errorNoFileOperation:
+	db "No file operation specified.",0
 CLI_errorAddress:
 	db "Invalid address specified.",0
 CLI_messageBasicHelp:
