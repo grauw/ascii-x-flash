@@ -3,6 +3,20 @@
 For the complete list of changes please refer to the
 [revision history](https://hg.sr.ht/~grauw/ascii-x-flash/log).
 
+## [1.3] — 2026-05-18
+
+* Default to erase, program, verify when file is specified.
+* Moved `/p` and `/v` to advanced options.
+* Changed `/p` option to not erase prior to programming.
+* Removed `/p!` option.
+* Added `/pb` option to limit program buffer size.
+* Added sector protection check.
+* Improved flashing robustness with dynamic protection.
+* Retry a few times when a flash operation fails.
+* Print a `!` when a flash operation error occurs.
+* Added check whether file exists before erasing.
+* Print capacity warning only once.
+
 ## [1.2.2] — 2025-09-11
 
 * Added checks for disk system and RAM slots.
@@ -40,6 +54,9 @@ For the complete list of changes please refer to the
 
 Initial release.
 
+[1.3]: https://hg.sr.ht/~grauw/ascii-x-flash/log?rev=release-1.3
+[1.2.2]: https://hg.sr.ht/~grauw/ascii-x-flash/log?rev=release-1.2.2
+[1.2.1]: https://hg.sr.ht/~grauw/ascii-x-flash/log?rev=release-1.2.1
 [1.2]: https://hg.sr.ht/~grauw/ascii-x-flash/log?rev=release-1.2
 [1.1]: https://hg.sr.ht/~grauw/ascii-x-flash/log?rev=release-1.1
 [1.0]: https://hg.sr.ht/~grauw/ascii-x-flash/log?rev=release-1.0
