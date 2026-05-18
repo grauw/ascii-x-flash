@@ -939,7 +939,7 @@ Application_ThrowFlashOperation:
 
 ;
 Application_messageWelcome:
-	db "ASCII-X flash tool v1.2.2 by Grauw",0
+	db "ASCII-X flash tool v1.3 by Grauw",0
 Application_errorFlash:
 	db "FlashROM error.",0
 Application_errorFlashOperation:
