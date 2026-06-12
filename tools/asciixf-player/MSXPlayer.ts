@@ -1,11 +1,14 @@
 import { SerialPort } from 'serialport';
 import { hex, assertByte, assertWord } from './Format.ts';
+import { type CommandQueueMode, MSXCommand } from './MSXCommand.ts';
 import { SerialLine } from './SerialLine.ts';
 
 const DEFAULT_TIMEOUT_MS = 30000;
 
 interface OpenOptions {
   baudRate?: number;
+  traceSerial?: boolean;
+  commandQueueMode?: CommandQueueMode;
 }
 
 interface CommandOptions {
@@ -13,19 +16,23 @@ interface CommandOptions {
 }
 
 export class MSXPlayer {
-  public static async open(path: string, { baudRate = 115200 }: OpenOptions = {}): Promise<MSXPlayer> {
+  public static async open(path: string, { baudRate = 115200, traceSerial = false, commandQueueMode = 'erroff' }: OpenOptions = {}): Promise<MSXPlayer> {
     const port = new SerialPort({ path, baudRate, autoOpen: false });
     await new Promise<void>((resolve, reject) => port.open((error) => error ? reject(error) : resolve()));
-    return new MSXPlayer(port);
+    return new MSXPlayer(port, traceSerial, commandQueueMode);
   }
 
+  public commandQueueMode: CommandQueueMode;
   private port: SerialPort;
   private line: SerialLine;
+  private traceSerial: boolean;
   private powered = false;
 
-  public constructor(port: SerialPort) {
+  public constructor(port: SerialPort, traceSerial = false, commandQueueMode: CommandQueueMode = 'erroff') {
     this.port = port;
     this.line = new SerialLine(port);
+    this.traceSerial = traceSerial;
+    this.commandQueueMode = commandQueueMode;
   }
 
   public async close(): Promise<void> {
@@ -36,10 +43,10 @@ export class MSXPlayer {
   }
 
   public async command(command: string, { timeoutMs = DEFAULT_TIMEOUT_MS }: CommandOptions = {}): Promise<string[]> {
-    await this.line.write(`${command}\r\n`);
+    await this.writeCommand(command);
     const lines = [];
     while (true) {
-      const line = await this.line.readLine(timeoutMs);
+      const line = await this.readLine(timeoutMs);
       if (/^OK$/i.test(line)) {
         return lines;
       }
@@ -50,21 +57,58 @@ export class MSXPlayer {
     }
   }
 
+  public async executeQueuedCommands(commands: MSXCommand[], options: CommandOptions = {}): Promise<string[]> {
+    let lines;
+    if (this.commandQueueMode == 'plain') {
+      lines = await this.executePlainQueuedCommands(commands, options);
+    } else {
+      lines = await this.executeErroffQueuedCommands(commands, options);
+    }
+    for (const line of lines) {
+      for (const command of commands) {
+        if (command.readResponse(line)) {
+          break;
+        }
+      }
+    }
+    return lines;
+  }
+
+  private async executeErroffQueuedCommands(commands: MSXCommand[], options: CommandOptions): Promise<string[]> {
+    await this.writeCommands([
+      'ERROFF',
+      ...commands.map((command) => command.toString())
+    ]);
+    return this.command('ERRON', options);
+  }
+
+  private async executePlainQueuedCommands(commands: MSXCommand[], options: CommandOptions): Promise<string[]> {
+    await this.writeCommands(commands.map((command) => command.toString()));
+    const allLines = [];
+    for (const command of commands) {
+      this.trace(`? ${command.toString()}`);
+      const lines = await this.readStatus(command.toString(), options);
+      allLines.push(...lines);
+    }
+    return allLines;
+  }
+
   public async receiveBuffer(address: number, data: Uint8Array, options: CommandOptions = {}): Promise<string[]> {
     assertWord(address, 'Buffer address');
     if (data.length > 0xffff) {
       throw new RangeError(`Buffer receive length too large: ${data.length}`);
     }
-    await this.line.write(`BRCV,${hex(address, 4)},${hex(data.length, 4)}\r\n`);
-    await this.line.write(data);
+    await this.writeCommand(`BRCV,${hex(address, 4)},${hex(data.length, 4)}`);
+    await this.writeBytes(data);
     return this.readStatus(`BRCV`, options);
   }
 
   public async sendBuffer(address: number, data: Uint8Array, options: CommandOptions = {}): Promise<string[]> {
     assertWord(address, 'Buffer address');
     assertWord(data.length, 'Buffer send length');
-    await this.line.write(`BSND,${hex(address, 4)},${hex(data.length, 4)}\r\n`);
+    await this.writeCommand(`BSND,${hex(address, 4)},${hex(data.length, 4)}`);
     await this.line.readBytes(data, options.timeoutMs ?? DEFAULT_TIMEOUT_MS);
+    this.trace(`< binary ${data.length} bytes`);
     return this.readStatus('BSND', options);
   }
 
@@ -149,7 +193,7 @@ export class MSXPlayer {
   private async readStatus(command: string, { timeoutMs = DEFAULT_TIMEOUT_MS }: CommandOptions = {}): Promise<string[]> {
     const lines = [];
     while (true) {
-      const line = await this.line.readLine(timeoutMs);
+      const line = await this.readLine(timeoutMs);
       if (/^OK$/i.test(line)) {
         return lines;
       }
@@ -157,6 +201,41 @@ export class MSXPlayer {
         throw new Error(`MSXPLAYer command failed: ${command}${lines.length ? `\n${lines.join('\n')}` : ''}`);
       }
       lines.push(line);
+    }
+  }
+
+  private async writeCommand(command: string): Promise<void> {
+    this.trace(`> ${command}`);
+    await this.line.write(`${command}\r\n`);
+  }
+
+  private async writeCommands(commands: string[]): Promise<void> {
+    for (const command of commands) {
+      this.trace(`> ${command}`);
+    }
+    await this.line.write(commands.map((command) => `${command}\r\n`).join(''));
+    this.trace(`> batch written (${commands.length} commands)`);
+  }
+
+  private async writeBytes(data: Uint8Array): Promise<void> {
+    this.trace(`> binary ${data.length} bytes`);
+    await this.line.write(data);
+  }
+
+  private async readLine(timeoutMs: number): Promise<string> {
+    try {
+      const line = await this.line.readLine(timeoutMs);
+      this.trace(`< ${line}`);
+      return line;
+    } catch (error) {
+      this.trace(`< ${error instanceof Error ? error.message : error}`);
+      throw error;
+    }
+  }
+
+  private trace(message: string): void {
+    if (this.traceSerial) {
+      process.stderr.write(`[serial] ${message}\n`);
     }
   }
 }

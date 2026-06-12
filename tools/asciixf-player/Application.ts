@@ -1,6 +1,7 @@
 import fs, { stat } from 'node:fs/promises';
 import { BLOCK_SIZE, MAX_BLOCKS } from './ASCII16XMapper.ts';
 import { FlashDevice, type FlashDeviceSlot, STAGING_BUFFER_SIZE } from './FlashDevice.ts';
+import { type CommandQueueMode } from './MSXCommand.ts';
 import { MSXPlayer } from './MSXPlayer.ts';
 
 interface ApplicationPlayer {
@@ -24,6 +25,8 @@ export interface ApplicationOptions {
   slots: FlashDeviceSlot[];
   port?: string;
   baudRate?: number;
+  traceSerial?: boolean;
+  commandQueueMode?: CommandQueueMode;
   fileStart: number;
   addressStart: number;
   addressEnd?: number;
@@ -103,7 +106,11 @@ export class Application {
     if (this.options.port == undefined) {
       throw new Error('Missing port.');
     }
-    return MSXPlayer.open(this.options.port, { baudRate: this.options.baudRate ?? 115200 });
+    return MSXPlayer.open(this.options.port, {
+      baudRate: this.options.baudRate ?? 115200,
+      traceSerial: this.options.traceSerial,
+      commandQueueMode: this.options.commandQueueMode
+    });
   }
 
   private async constructFlashDevices(player: ApplicationPlayer): Promise<void> {

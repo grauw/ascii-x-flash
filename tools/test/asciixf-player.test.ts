@@ -8,6 +8,7 @@ import { Application } from '../asciixf-player/Application.ts';
 import { CLI } from '../asciixf-player/CLI.ts';
 import { CFIQuery } from '../asciixf-player/CFIQuery.ts';
 import { FlashCommand } from '../asciixf-player/FlashCommand.ts';
+import { MSXCommand, ReadMemoryCommand } from '../asciixf-player/MSXCommand.ts';
 
 class MockPlayer {
   public received: { bufferAddress: number; data: Uint8Array }[] = [];
@@ -176,6 +177,55 @@ class PollPlayer {
   }
 }
 
+class QueuedPlayer {
+  public queues: string[][] = [];
+  public writes: { address: number; data: number }[] = [];
+
+  public async executeQueuedCommands(commands: MSXCommand[]): Promise<string[]> {
+    this.queues.push(commands.map((command) => command.toString()));
+    return [];
+  }
+
+  public async writeMemory(address: number, data: number): Promise<string[]> {
+    this.writes.push({ address, data });
+    return [];
+  }
+
+  public async readMemory(address: number): Promise<number> {
+    assert.equal(address, 0x80ff);
+    return 0xa5;
+  }
+
+  public async transferBufferToSlot(address: number, length: number, bufferAddress: number): Promise<string[]> {
+    assert.fail(`Unexpected transferBufferToSlot ${address} ${length} ${bufferAddress}`);
+  }
+}
+
+class QueueOffPlayer {
+  public commandQueueMode = 'off' as const;
+  public writes: { address: number; data: number }[] = [];
+  public transfers: { address: number; length: number; bufferAddress: number }[] = [];
+
+  public async executeQueuedCommands(): Promise<string[]> {
+    assert.fail('Unexpected executeQueuedCommands');
+  }
+
+  public async writeMemory(address: number, data: number): Promise<string[]> {
+    this.writes.push({ address, data });
+    return [];
+  }
+
+  public async readMemory(address: number): Promise<number> {
+    assert.equal(address, 0x80ff);
+    return 0xa5;
+  }
+
+  public async transferBufferToSlot(address: number, length: number, bufferAddress: number): Promise<string[]> {
+    this.transfers.push({ address, length, bufferAddress });
+    return [];
+  }
+}
+
 test('maps ASCII16-X physical addresses like the Z80 implementation', () => {
   assert.deepEqual(mapPhysicalAddress(0x0000000), {
     logicalAddress: 0x8000,
@@ -229,6 +279,8 @@ test('still accepts slash-prefixed short options', () => {
     '/pb', '5',
     '/ec',
     '/v',
+    '/ts',
+    '/qm', 'plain',
     'game.rom'
   ]);
   assert.equal(cli.baudRate, 115200);
@@ -239,6 +291,8 @@ test('still accepts slash-prefixed short options', () => {
   assert.deepEqual(cli.slots, [{ primary: 2 }]);
   assert.equal(cli.chipErase, true);
   assert.equal(cli.verify, true);
+  assert.equal(cli.traceSerial, true);
+  assert.equal(cli.commandQueueMode, 'plain');
   assert.equal(cli.path, 'game.rom');
 });
 
@@ -376,6 +430,42 @@ test('poll falls back from value polling to DQ6 polling', async () => {
   ]);
   await new FlashCommand(player).poll(0x8000, 0xa5, 5000);
   assert.deepEqual(player.writes, []);
+});
+
+test('program buffer queues setup, transfer and confirm write', async () => {
+  const player = new QueuedPlayer();
+  await new FlashCommand(player).programBuffer(0x8000, 0xc000, 0x100, 0xa5);
+  assert.deepEqual(player.queues, [[
+    'SMWR,4AAA,AA',
+    'SMWR,4555,55',
+    'SMWR,8000,25',
+    'SMWR,8000,FF',
+    'SMTW,8000,0100,C000',
+    'SMWR,80FF,29'
+  ]]);
+  assert.deepEqual(player.writes, []);
+});
+
+test('program buffer can disable queued commands', async () => {
+  const player = new QueueOffPlayer();
+  await new FlashCommand(player).programBuffer(0x8000, 0xc000, 0x100, 0xa5);
+  assert.deepEqual(player.writes, [
+    { address: 0x4aaa, data: 0xaa },
+    { address: 0x4555, data: 0x55 },
+    { address: 0x8000, data: 0x25 },
+    { address: 0x8000, data: 0xff },
+    { address: 0x80ff, data: 0x29 }
+  ]);
+  assert.deepEqual(player.transfers, [
+    { address: 0x8000, length: 0x100, bufferAddress: 0xc000 }
+  ]);
+});
+
+test('read memory command parses response line', () => {
+  const command = new ReadMemoryCommand(0x8000);
+  assert.equal(command.readResponse('8000 : 4d'), true);
+  assert.equal(command.value, 0x4d);
+  assert.equal(command.readResponse('PASS : 2'), false);
 });
 
 test('programming stages a block in the MSXPLAYer buffer at C000', async () => {

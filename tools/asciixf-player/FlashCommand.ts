@@ -1,10 +1,13 @@
 import { mapPhysicalAddress } from './ASCII16XMapper.ts';
 import { hex } from './Format.ts';
+import { type CommandQueueMode, MSXCommand, TransferBufferToSlotCommand, WriteMemoryCommand } from './MSXCommand.ts';
 
 export interface FlashCommandPlayer {
+  commandQueueMode?: CommandQueueMode;
   writeMemory(address: number, data: number): Promise<unknown>;
   readMemory(address: number): Promise<number>;
   transferBufferToSlot(address: number, length: number, bufferAddress: number): Promise<unknown>;
+  executeQueuedCommands?(commands: MSXCommand[]): Promise<unknown>;
 }
 
 const UNLOCK1 = 0x4aaa;
@@ -70,11 +73,22 @@ export class FlashCommand {
   }
 
   public async programBuffer(logicalAddress: number, bufferAddress: number, length: number, expectedLastByte: number): Promise<void> {
-    await this.unlock();
-    await this.player.writeMemory(logicalAddress, 0x25);
-    await this.player.writeMemory(logicalAddress, length - 1);
-    await this.player.transferBufferToSlot(logicalAddress, length, bufferAddress);
-    await this.player.writeMemory(logicalAddress + length - 1, 0x29);
+    if (this.player.executeQueuedCommands != undefined && this.player.commandQueueMode != 'off') {
+      await this.player.executeQueuedCommands([
+        new WriteMemoryCommand(UNLOCK1, 0xaa),
+        new WriteMemoryCommand(UNLOCK2, 0x55),
+        new WriteMemoryCommand(logicalAddress, 0x25),
+        new WriteMemoryCommand(logicalAddress, length - 1),
+        new TransferBufferToSlotCommand(logicalAddress, length, bufferAddress),
+        new WriteMemoryCommand(logicalAddress + length - 1, 0x29)
+      ]);
+    } else {
+      await this.unlock();
+      await this.player.writeMemory(logicalAddress, 0x25);
+      await this.player.writeMemory(logicalAddress, length - 1);
+      await this.player.transferBufferToSlot(logicalAddress, length, bufferAddress);
+      await this.player.writeMemory(logicalAddress + length - 1, 0x29);
+    }
     await this.poll(logicalAddress + length - 1, expectedLastByte, 5000);
   }
 

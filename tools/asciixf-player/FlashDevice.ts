@@ -70,7 +70,7 @@ export class FlashDevice {
     }
     this.capabilityFlash = true;
     if (this.cfiQuery.supportsDynamicProtection) {
-      this.capabilityProtect = true;
+      // this.capabilityProtect = true;
     }
   }
 

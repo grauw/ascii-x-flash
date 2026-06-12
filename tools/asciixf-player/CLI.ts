@@ -1,6 +1,7 @@
 import { Application, type ApplicationOptions } from './Application.ts';
 import { BLOCK_SIZE, MAX_BLOCKS } from './ASCII16XMapper.ts';
 import { parseHex } from './Format.ts';
+import { type CommandQueueMode } from './MSXCommand.ts';
 
 export interface SlotSpec {
   primary: number;
@@ -23,6 +24,8 @@ Options:
   --verify, -v               Verify flash against file
   --dump, -d                 Dump flash to file
   --info, -i                 Display FlashROM information
+  --trace-serial, -ts        Trace serial communication to stderr
+  --queue-mode, -qm <mode>   Command queue mode: off, plain or erroff (default: erroff)
   --file-start, -fs <hex>    File start offset
   --address-start, -as <hex> Address start byte offset, 1000h-aligned
   --address-end, -ae <hex>   Address end byte offset, exclusive and 1000h-aligned
@@ -53,6 +56,8 @@ export class CLI implements ApplicationOptions {
   public slots: SlotSpec[] = [];
   public port?: string;
   public baudRate = 115200;
+  public traceSerial = false;
+  public commandQueueMode: CommandQueueMode = 'erroff';
 
   public constructor(argv: string[]) {
     this.parse(argv);
@@ -89,6 +94,10 @@ export class CLI implements ApplicationOptions {
         this.dump = true;
       } else if (arg == '--info' || this.isShortFlag(short, 'i')) {
         this.info = true;
+      } else if (arg == '--trace-serial' || this.isShortFlag(short, 'ts')) {
+        this.traceSerial = true;
+      } else if (arg == '--queue-mode' || this.isShortOption(short, 'qm')) {
+        this.commandQueueMode = this.parseCommandQueueMode(short?.value ?? this.requireValue(argv, ++index, arg));
       } else if (arg == '--file-start' || this.isShortOption(short, 'fs')) {
         this.fileStart = parseHex(short?.value ?? this.requireValue(argv, ++index, arg), 'file start');
       } else if (arg == '--address-start' || this.isShortOption(short, 'as')) {
@@ -211,7 +220,7 @@ export class CLI implements ApplicationOptions {
     }
 
     const body = arg.slice(1);
-    for (const name of ['fs', 'as', 'ae', 'ec', 'pb', 's', 'e', 'p', 'v', 'd', 'i', 'h']) {
+    for (const name of ['fs', 'as', 'ae', 'ec', 'pb', 'ts', 'qm', 's', 'e', 'p', 'v', 'd', 'i', 'h']) {
       if (body == name) {
         return { name };
       }
@@ -232,7 +241,7 @@ export class CLI implements ApplicationOptions {
   }
 
   private optionTakesValue(name: string): boolean {
-    return name == 's' || name == 'fs' || name == 'as' || name == 'ae' || name == 'pb';
+    return name == 's' || name == 'fs' || name == 'as' || name == 'ae' || name == 'pb' || name == 'qm';
   }
 
   private parseBufferPageMask(value: string): number {
@@ -240,6 +249,13 @@ export class CLI implements ApplicationOptions {
       throw new Error(`Invalid program buffer size: ${value}`);
     }
     return (1 << Number.parseInt(value, 10)) - 1;
+  }
+
+  private parseCommandQueueMode(value: string): CommandQueueMode {
+    if (value == 'off' || value == 'plain' || value == 'erroff') {
+      return value;
+    }
+    throw new Error(`Invalid command queue mode: ${value}`);
   }
 
   private requireValue(argv: string[], index: number, option: string): string {
