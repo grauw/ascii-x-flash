@@ -1,7 +1,7 @@
 # ASCII-X flash tool change log
 
 For the complete list of changes please refer to the
-[revision history](https://hg.sr.ht/~grauw/ascii-x-flash/log).
+[revision history](https://github.com/grauw/ascii-x-flash/commits).
 
 ## [1.3] — 2026-05-18
 
@@ -54,9 +54,9 @@ For the complete list of changes please refer to the
 
 Initial release.
 
-[1.3]: https://hg.sr.ht/~grauw/ascii-x-flash/log?rev=release-1.3
-[1.2.2]: https://hg.sr.ht/~grauw/ascii-x-flash/log?rev=release-1.2.2
-[1.2.1]: https://hg.sr.ht/~grauw/ascii-x-flash/log?rev=release-1.2.1
-[1.2]: https://hg.sr.ht/~grauw/ascii-x-flash/log?rev=release-1.2
-[1.1]: https://hg.sr.ht/~grauw/ascii-x-flash/log?rev=release-1.1
-[1.0]: https://hg.sr.ht/~grauw/ascii-x-flash/log?rev=release-1.0
+[1.3]: https://github.com/grauw/ascii-x-flash/commits/release-1.3
+[1.2.2]: https://github.com/grauw/ascii-x-flash/commits/release-1.2.2
+[1.2.1]: https://github.com/grauw/ascii-x-flash/commits/release-1.2.1
+[1.2]: https://github.com/grauw/ascii-x-flash/commits/release-1.2
+[1.1]: https://github.com/grauw/ascii-x-flash/commits/release-1.1
+[1.0]: https://github.com/grauw/ascii-x-flash/commits/release-1.0
